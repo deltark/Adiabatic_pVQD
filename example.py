@@ -12,74 +12,75 @@ from qiskit.aqua                      import QuantumInstance
 from qiskit.aqua.operators            import Z, I, X, Y
 from qiskit.aqua.operators 			  import PauliOp, SummedOp
 
-from pauli_function import *
-from pVQD			import *
-from ansatze        import *
-from hamiltonian_op import IsingHamiltonian
+if __name__ == "__main__":
+	from pauli_function import *
+	from pVQD			import *
+	from ansatze        import *
+	from hamiltonian_op import IsingHamiltonian
 
-# Initialize system parameters for Ising
+	# Initialize system parameters for Ising
 
-spins   = 3
-V       = 0.25
-g       = 1.0
-dt      = 0.05
-n_steps = 40
-tmax = 2.0
+	spins   = 3
+	V       = 0.25
+	g       = 1.0
+	dt      = 0.05
+	n_steps = 40
+	tmax    = 2.0
 
-# Algorithm parameters
+	# Algorithm parameters
 
-ths = 0.99999
-depth = 2
-
-
-### Example circ
-
-ex_params = np.zeros((depth+1)*spins +depth*(spins-1))
-wfn = hweff_ansatz(ex_params)
+	ths = 0.99999
+	depth = 2
 
 
-### Shift
-shift  = np.array(len(ex_params)*[0.01])
+	### Example circ
 
-print("Initial shift:",shift)
-
-
-### Generate the Hamiltonian
-H = IsingHamiltonian(spins, V, g, tmax, timedep=True)
-
-print(wfn)
-print(H)
-
-### Backend
-shots = 1
-backend  = Aer.get_backend('statevector_simulator')
-instance = QuantumInstance(backend=backend,shots=shots)
-
-### Prepare the observables to measure
-obs = {}
-# Magnetization
-
-for i in range(spins):
-	obs['Sz_'+str(i)]      = PauliOp(generate_pauli([],[i],spins),1.0)
-	obs['Sx_'+str(i)]      = PauliOp(generate_pauli([i],[],spins),1.0)
-	obs['Sy_'+str(i)]      = PauliOp(generate_pauli([i],[i],spins),1.0)
-
-#Energy
-obs['E'] = generate_ising(spins,V,g)
-
-for (name,pauli) in obs.items():
-	print(name)
-	print(pauli)
+	ex_params = np.zeros((depth+1)*spins +depth*(spins-1))
+	wfn = hweff_ansatz(ex_params)
 
 
-### Initialize the algorithm
+	### Shift
+	shift  = np.array(len(ex_params)*[0.01])
 
-# Choose a specific set of parameters
-initial_point = None
-
-# Choose the gradient optimizer: 'sgd', 'adam'
-gradient = 'sgd'
+	print("Initial shift:",shift)
 
 
-algo = pVQD(H,hweff_ansatz,ex_params,shift,instance,shots)
-algo.run(ths,dt,n_steps, obs_dict = obs,filename= 'data/J_param/025.dat', max_iter = 50)
+	### Generate the Hamiltonian
+	H = IsingHamiltonian(spins, V, g, tmax, timedep=True)
+
+	print(wfn)
+	print(H)
+
+	### Backend
+	shots = 1
+	backend  = Aer.get_backend('statevector_simulator')
+	instance = QuantumInstance(backend=backend,shots=shots)
+
+	### Prepare the observables to measure
+	obs = {}
+	# Magnetization
+
+	for i in range(spins):
+		obs['Sz_'+str(i)]      = PauliOp(generate_pauli([],[i],spins),1.0)
+		obs['Sx_'+str(i)]      = PauliOp(generate_pauli([i],[],spins),1.0)
+		obs['Sy_'+str(i)]      = PauliOp(generate_pauli([i],[i],spins),1.0)
+
+	#Energy
+	obs['E'] = generate_ising(spins,V,g)
+
+	for (name,pauli) in obs.items():
+		print(name)
+		print(pauli)
+
+
+	### Initialize the algorithm
+
+	# Choose a specific set of parameters
+	initial_point = None
+
+	# Choose the gradient optimizer: 'sgd', 'adam'
+	gradient = 'sgd'
+
+
+	algo = pVQD(H,hweff_ansatz,ex_params,shift,instance,shots)
+	algo.run(ths,dt,n_steps, obs_dict = obs,filename= 'trial.dat', max_iter = 50)

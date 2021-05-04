@@ -18,7 +18,7 @@ class IsingHamiltonian:
         if self.timedep:
             self.time = newtime
             ft = self.coup*self.time/self.tmax
-            self.operator = generate_ising(self.nqubits, ft, self.field)
+            self.operator = generate_ising(self.num_qubits, ft, self.field)
         else:
             print('This Hamiltonian is not time-dependent')
         return self.operator
