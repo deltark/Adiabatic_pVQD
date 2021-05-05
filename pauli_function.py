@@ -1,5 +1,5 @@
 import numpy as np
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 
 
 from qiskit.quantum_info 			  import Pauli
@@ -31,7 +31,7 @@ def generate_ising_pbc(n_spins,coup,field):
 		n_spins (integer)
 		coup    (float)
 		field   (float)
-		
+
 	Returns:
 		Hamiltonian of Ising model with ZZ interaction a X transverse field, pbc
 	'''
@@ -60,7 +60,7 @@ def generate_ising_pbc(n_spins,coup,field):
 		H = H + PauliOp(field_list[i],field_coeff[i])
 
 	return H
-	
+
 
 def generate_ising(n_spins,coup,field):
 	'''
@@ -68,7 +68,7 @@ def generate_ising(n_spins,coup,field):
 		n_spins (integer)
 		coup    (float)
 		field   (float)
-		
+
 	Returns:
 		Hamiltonian of Ising model with ZZ interaction a X transverse field
 	'''
@@ -96,9 +96,34 @@ def generate_ising(n_spins,coup,field):
 
 	return H
 
+def generate_ising_Hzz(n_spins, coup):
 
+	int_list = []
 
- 
+	for i in range(n_spins-1):
+		int_list.append(generate_pauli([],[i,i+1],n_spins))
 
+	int_coeff = [coup]*len(int_list)
 
+	H = PauliOp(int_list[0],int_coeff[0])
 
+	for i in range(1,len(int_list)):
+		H = H + PauliOp(int_list[i],int_coeff[i])
+
+	return H
+
+def generate_ising_Hx(n_spins, field):
+
+	field_list = []
+
+	for i in range(n_spins):
+		field_list.append(generate_pauli([i],[],n_spins))
+
+	field_coeff = [field]*len(field_list)
+
+	H = PauliOp(field_list[0],field_coeff[0])
+
+	for i in range(1, len(field_list)):
+		H = H + PauliOp(field_list[i],field_coeff[i])
+
+	return H

@@ -51,13 +51,17 @@ def ei(i,n):
 
 class pVQD:
 
-	def __init__(self,hamiltonian,ansatz,parameters,initial_shift,instance,shots):
+	def __init__(self,hamiltonian,ansatz,parameters,initial_shift,instance,shots,ham_tfunc=None):
 
 		'''
 		Args:
 
+		hamiltonian   : [list of operators or operator] list of Hamiltonian parts to be summed (e.g. [Hx, Hzz]),
+			or just a single Hamiltonian, time-dependent parts first
 		parameters    : [numpy.array] an array containing the parameters of the ansatz
 		initial_shift : [numpy.array] an array containing the initial guess of shifts
+		ham_tfunc     : [list of lambda functions or lambda function] list of time-dependent functions to be
+			multiplied to the Hamiltonian parts in the same order
 
 		'''
 		self.hamiltonian     = hamiltonian
@@ -66,6 +70,7 @@ class pVQD:
 		self.num_parameters  = len(parameters)
 		self.shift           = initial_shift
 		self.shots           = shots
+		self.ham_tfunc       = ham_tfunc
 
 		## Initialize quantities that will be equal all over the calculation
 		self.params_vec      = ParameterVector('p',self.num_parameters)
@@ -80,6 +85,13 @@ class pVQD:
 		# ParameterVector for measuring abservables
 		self.obs_params = ParameterVector('θ',self.ansatz.num_parameters)
 
+		# ParameterVector for time-evolving Trotter circuit (Hamiltonian)
+		if self.ham_tfunc is not None:
+			if isinstance(self.ham_tfunc, list):
+				self.ham_params = ParameterVector('h', len(self.ham_tfunc))
+			else:
+				self.ham_params = ParameterVector('h', 1)
+
 
 
 	def construct_total_circuit(self,time_step):
@@ -87,10 +99,19 @@ class pVQD:
 
 		# First, create the Trotter step
 
-		step_h  = time_step*self.hamiltonian.operator
-		trotter = PauliTrotterEvolution(reps=1)
-		U_dt    = trotter.convert(step_h.exp_i()).to_circuit()
+		# Make the Hamiltonian a list if it's a single one
+		if not isinstance(self.hamiltonian, list):
+			self.hamiltonian = [self.hamiltonian]
 
+		if self.ham_tfunc is not None:
+			step_h  = self.ham_params*np.array(self.hamiltonian[:len(self.ham_tfunc)])*time_step
+			step_h  = np.append(step_h, np.array(self.hamiltonian[len(self.ham_tfunc):])*time_step)
+		else:
+			step_h  = time_step*np.array(self.hamiltonian)
+
+		trotter = PauliTrotterEvolution(reps=1)
+		# Total Trotter circuit constructed by summing over the Hamiltonian parts
+		U_dt    = np.sum([trotter.convert(step_h[j].exp_i()).to_circuit() for j in range(len(step_h))])
 
 
 		l_circ  = self.ansatz.assign_parameters({self.params_vec: self.left})
@@ -298,6 +319,12 @@ class pVQD:
 		#######################################################
 
 		times = [i*timestep for i in range(n_steps+1)]
+
+		if self.ham_tfunc is not None
+			## Prepare the time-dependent Hamiltonian parameters
+			ham_tfunc_values = np.array([[self.ham_tfunc[i](t) for t in times] for i in range(len(self.ham_tfunc))])
+			ham_dict = [dict(zip(self.ham_params[:], ham_tfunc_values[:,i].tolist())) for i in range(n_steps+1)]
+
 		tot_steps= 0
 
 		if initial_point != None :
@@ -342,7 +369,7 @@ class pVQD:
 			print("Initial parameters:", self.parameters)
 			print('\n================================== \n')
 
-			#update time_dependent Hamiltonian
+			#update time dependent Hamiltonian
 			Ht = self.hamiltonian.update_time(times[i+1])
 
 			count = 0
