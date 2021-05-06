@@ -118,7 +118,7 @@ class pVQD:
 		r_circ  = self.ansatz.assign_parameters({self.params_vec: self.right})
 
 		## Projector
-		zero_prj = StateFn(projector_zero(self.hamiltonian.num_qubits),is_measurement = True)
+		zero_prj = StateFn(projector_zero(self.hamiltonian[0].num_qubits),is_measurement = True)
 		state_wfn = zero_prj @ StateFn(r_circ +U_dt+ l_circ.inverse())
 
 
@@ -320,7 +320,7 @@ class pVQD:
 
 		times = [i*timestep for i in range(n_steps+1)]
 
-		if self.ham_tfunc is not None
+		if self.ham_tfunc is not None:
 			## Prepare the time-dependent Hamiltonian parameters
 			ham_tfunc_values = np.array([[self.ham_tfunc[i](t) for t in times] for i in range(len(self.ham_tfunc))])
 			ham_dict = [dict(zip(self.ham_params[:], ham_tfunc_values[:,i].tolist())) for i in range(n_steps+1)]
@@ -369,8 +369,12 @@ class pVQD:
 			print("Initial parameters:", self.parameters)
 			print('\n================================== \n')
 
-			#update time dependent Hamiltonian
-			Ht = self.hamiltonian.update_time(times[i+1])
+			if self.ham_tfunc is not None:
+				#update time dependent Hamiltonian
+				state_wfn_Ht = state_wfn.assign_parameters(ham_dict[i+1])
+				print(state_wfn_Ht)
+			else:
+				state_wfn_Ht = state_wfn
 
 			count = 0
 			self.overlap = [0.01,0]
@@ -397,9 +401,9 @@ class pVQD:
 				## Measure energy and gradient
 
 				if grad == 'param_shift':
-					E,g = self.compute_overlap_and_gradient(state_wfn,self.parameters,self.shift,expectation,sampler)
+					E,g = self.compute_overlap_and_gradient(state_wfn_Ht,self.parameters,self.shift,expectation,sampler)
 				if grad == 'spsa':
-					E,g = self.compute_overlap_and_gradient_spsa(state_wfn,self.parameters,self.shift,expectation,sampler,count)
+					E,g = self.compute_overlap_and_gradient_spsa(state_wfn_Ht,self.parameters,self.shift,expectation,sampler,count)
 
 				tot_steps = tot_steps+1
 

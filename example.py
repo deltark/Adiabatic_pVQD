@@ -21,8 +21,8 @@ if __name__ == "__main__":
 	# Initialize system parameters for Ising
 
 	spins   = 3
-	V       = 0.25
-	g       = 1.0
+	V       = -0.25
+	g       = -1.0
 	dt      = 0.05
 	n_steps = 40
 	tmax    = 2.0
@@ -46,7 +46,10 @@ if __name__ == "__main__":
 
 
 	### Generate the Hamiltonian
-	H = IsingHamiltonian(spins, V, g, tmax, timedep=True)
+	Hzz = generate_ising_Hzz(spins, V)
+	Hx  = generate_ising_Hx(spins, g)
+	H = [Hzz, Hx]
+	H_tfunc = [lambda x : x/tmax]
 
 	print(wfn)
 	print(H)
@@ -82,5 +85,5 @@ if __name__ == "__main__":
 	gradient = 'sgd'
 
 
-	algo = pVQD(H,hweff_ansatz,ex_params,shift,instance,shots)
-	algo.run(ths,dt,n_steps, obs_dict = obs,filename= 'trial.dat', max_iter = 50)
+	algo = pVQD(H,hweff_ansatz,ex_params,shift,instance,shots,H_tfunc)
+	algo.run(ths,dt,n_steps, obs_dict = obs,filename= 'trial.dat', max_iter = 100)

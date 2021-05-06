@@ -25,6 +25,7 @@ from qiskit.aqua.operators                import Z, I
 
 
 from pauli_function import *
+from ansatze import *
 
 shots = 1
 backend  = Aer.get_backend('statevector_simulator')
@@ -65,22 +66,43 @@ U_dt = np.sum([trotter.convert(step_h[j].exp_i()).to_circuit() for j in range(2)
 #
 # U_dt = np.sum(U_dt_list)
 
-print(U_dt)
+# print(U_dt)
 
 tmax = 2.0
 Nt = int(tmax/time_step)
 time_func_zz = lambda x : x/tmax
 time_func_x = lambda x : 1
-print(time_func_x(1.0))
+# print(time_func_x(1.0))
 time_evol_vec = np.array([[time_func_zz(time_step*i) for i in range(Nt+1)], [time_func_x(time_step*i) for i in range(Nt+1)]])
 
 values_dict = [dict(zip(ft[:], time_evol_vec[:,i].tolist())) for i in range(Nt+1)]
 # print(values_dict)
 
-sampler = CircuitSampler(instance)
-# expectation = PauliExpectation()
+ansatz_p = ParameterVector('p',18)
+ansatz = hweff_ansatz(ansatz_p)
+
+expectation = PauliExpectation()
+
+circ_wfn = ansatz + U_dt
+circ_wfn = expectation.convert(circ_wfn)
+
+print(circ_wfn)
+
+t_wfn = circ_wfn.assign_parameters(values_dict[0])
+
+print(t_wfn)
+
+t_wfn = circ_wfn.assign_parameters(values_dict[1])
+
+print(t_wfn)
+
+# sampler = CircuitSampler(instance)
+
+
+
 # U_dt = expectation.convert(U_dt)
-U_dt = StateFn(U_dt)
+# circ_wfn = StateFn(circ_wfn)
+
 
 # for values in values_dict:
 #     sampled_op = sampler.convert(U_dt,params=values)
