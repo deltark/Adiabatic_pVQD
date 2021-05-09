@@ -111,7 +111,10 @@ class pVQD:
 
 		trotter = PauliTrotterEvolution(reps=1)
 		# Total Trotter circuit constructed by summing over the Hamiltonian parts
-		U_dt    = np.sum([trotter.convert(step_h[j].exp_i()).to_circuit() for j in range(len(step_h))])
+		if len(step_h)>1:
+			U_dt    = np.sum([trotter.convert(step_h[j].exp_i()).to_circuit() for j in range(len(step_h))])
+		else:
+			U_dt    = trotter.convert(step_h[0].exp_i()).to_circuit()
 
 
 		l_circ  = self.ansatz.assign_parameters({self.params_vec: self.left})

@@ -11,9 +11,6 @@ def hweff_ansatz(p):
 	circuit = QuantumCircuit(n_spins)
 	depth = 2
 
-	for i in range(n_spins):
-		circuit.h(i)
-
 	for j in range(depth):
 
 		if(j%2 == 0):
@@ -51,6 +48,46 @@ def hweff_ansatz(p):
 	if (depth%2 == 0):
 		for i in range(n_spins):
 				circuit.rx(p[count],i)
+				count = count +1
+
+	return circuit
+
+#==========================================
+
+def hweff_ansatz_adiab(p):
+	n_spins = 3
+	count = 0
+	circuit = QuantumCircuit(n_spins)
+	depth = 2
+
+	for i in range(n_spins):
+		circuit.h(i)
+
+	for j in range(depth):
+
+		if(j%2 == 0):
+			# Rzz - Rx block
+			for i in range(n_spins-1):
+				circuit.rzz(p[count],i,i+1)
+				count = count +1
+
+			circuit.barrier()
+
+			for i in range(n_spins):
+				circuit.rx(p[count],i)
+				count = count +1
+
+			circuit.barrier()
+
+		if(j%2 == 1):
+			for i in range(n_spins-1):
+				circuit.rzz(p[count],i,i+1)
+				count = count +1
+
+			circuit.barrier()
+
+			for i in range(n_spins):
+				circuit.ry(p[count],i)
 				count = count +1
 
 	return circuit
