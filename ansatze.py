@@ -93,3 +93,92 @@ def hweff_ansatz_adiab(p):
 	return circuit
 
 #==========================================
+
+def custom_ansatz(p):
+
+	n_spins = 3
+	count = 0
+	depth = 2
+
+	t_order = 2
+
+	# def c_gate(qubit0,qubit1,p0,p1,p2,p3,p4):
+	# 	circuit.rx(p0,qubit0)
+	# 	circuit.ry(p1,qubit0)
+	#
+	# 	circuit.rx(p2,qubit1)
+	# 	circuit.ry(p3,qubit1)
+	#
+	# 	circuit.rzz(p4,qubit0,qubit1)
+
+	def c_gate(qubit0,qubit1,p0,p1,p2,p3,p4):
+		circuit.ry(p0,qubit0)
+		circuit.rx(p1,qubit0)
+
+		circuit.ry(p2,qubit1)
+		circuit.rx(p3,qubit1)
+
+		circuit.rzz(p4,qubit0,qubit1)
+
+	circuit = QuantumCircuit(n_spins)
+
+	# Prepare initial ground state
+	for i in range(n_spins):
+		circuit.h(i)
+
+	# Making multiple depths
+	for d in range(depth):
+
+		for k in range(1,t_order):
+			for r in range(k+1):
+				for i in range(n_spins):
+					if i%(k+1) == r and i+k < n_spins:
+						c_gate(i,i+k,p[count],p[count+1],p[count+2],p[count+3],p[count+4])
+						count = count+5
+				#circuit.barrier()
+
+		for i in range(n_spins):
+			circuit.ry(p[count],i)
+			count = count +1
+		#circuit.barrier()
+
+	return circuit
+
+#==========================================
+
+def custom_hweff_ansatz(p):
+
+	n_spins = 3
+	count = 0
+	depth = 2
+	circuit = QuantumCircuit(n_spins)
+	t_order = n_spins
+
+	for i in range(n_spins):
+		circuit.h(i)
+
+	for j in range(depth):
+
+		for k in range(1,t_order):
+			for r in range(k+1):
+				for i in range(n_spins):
+					if i%(k+1) == r and i+k < n_spins:
+						circuit.rzz(p[count], i, i+k)
+						count = count+1
+
+		circuit.barrier()
+
+		if(j%2 == 0):
+			for i in range(n_spins):
+				circuit.rx(p[count],i)
+				count = count +1
+
+			circuit.barrier()
+
+		if(j%2 == 1):
+
+			for i in range(n_spins):
+				circuit.ry(p[count],i)
+				count = count +1
+
+	return circuit

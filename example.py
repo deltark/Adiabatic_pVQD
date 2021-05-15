@@ -31,28 +31,31 @@ if __name__ == "__main__":
 	# Initialize system parameters for Ising
 
 	spins   = 3
-	V       = -0.1
+	V       = -0.25
 	g       = -1.0
-	dt      = 0.01
-	tmax    = 2.0
+	dt      = 0.02
+	tmax    = 8.0
 	n_steps = int(tmax/dt)
 
 	# Compute the exact ground state of the Hamiltonian
 	# Heig = hamiltonian_eig(spins, V, g)
 	# exactGS = np.array([np.min(Heig), second_smallest(Heig)])
-	# np.save('data/J_param_080/exactGS.npy', exactGS)
+	# np.save('data/exactGS_J110.npy', exactGS)
 
 	# Algorithm parameters
 
-	ths = 0.99999999
+	ths = 0.999999
 	depth = 2
 
 
 	### Example circ
 
 	# ex_params = np.zeros((depth+1)*spins +depth*(spins-1)) #hweff_ansatz
-	ex_params = np.zeros(depth*spins + depth*(spins-1)) #hweff_ansatz_adiab
-	wfn = hweff_ansatz_adiab(ex_params)
+	# ex_params = np.zeros(depth*spins + depth*(spins-1)) #hweff_ansatz_adiab
+	# ex_params = np.zeros(depth*(5*(spins-1) + 5*(spins-2) + spins)) #custom_ansatz t_order=3
+	# ex_params = np.zeros(depth*(5*(spins-1) + spins)) #custom_ansatz t_order=2
+	ex_params = np.zeros(depth*((spins-1) + (spins-2) + spins)) #custom_hweff_ansatz t_order=3
+	wfn = custom_hweff_ansatz(ex_params)
 
 
 	### Shift
@@ -72,6 +75,7 @@ if __name__ == "__main__":
 	print(H)
 
 	### Backend
+	# shots = 400000
 	shots = 1
 	backend  = Aer.get_backend('statevector_simulator')
 	instance = QuantumInstance(backend=backend,shots=shots)
@@ -80,10 +84,10 @@ if __name__ == "__main__":
 	obs = {}
 	# Magnetization
 
-	for i in range(spins):
-		obs['Sz_'+str(i)]      = PauliOp(generate_pauli([],[i],spins),1.0)
-		obs['Sx_'+str(i)]      = PauliOp(generate_pauli([i],[],spins),1.0)
-		obs['Sy_'+str(i)]      = PauliOp(generate_pauli([i],[i],spins),1.0)
+	# for i in range(spins):
+	# 	obs['Sz_'+str(i)]      = PauliOp(generate_pauli([],[i],spins),1.0)
+	# 	obs['Sx_'+str(i)]      = PauliOp(generate_pauli([i],[],spins),1.0)
+	# 	obs['Sy_'+str(i)]      = PauliOp(generate_pauli([i],[i],spins),1.0)
 
 	#Energy
 	obs['E'] = generate_ising(spins,V,g)
@@ -102,5 +106,5 @@ if __name__ == "__main__":
 	gradient = 'sgd'
 
 
-	algo = pVQD(H,hweff_ansatz_adiab,ex_params,shift,instance,shots,H_tfunc)
-	algo.run(ths,dt,n_steps, obs_dict = obs,filename= 'data/J_param_010/VQD.dat', max_iter = 60)
+	algo = pVQD(H,custom_hweff_ansatz,ex_params,shift,instance,shots,H_tfunc)
+	algo.run(ths,dt,n_steps, obs_dict = obs,filename= 'data/sv_J025_T8.dat', max_iter = 50, opt = 'sgd')
