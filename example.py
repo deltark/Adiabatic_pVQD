@@ -19,22 +19,22 @@ if __name__ == "__main__":
 	from exact_eigenvalues import hamiltonian_eig
 
 	#tool
-	def second_smallest(numbers):
-	    m1, m2 = float('inf'), float('inf')
-	    for x in numbers:
-	        if x <= m1:
-	            m1, m2 = x, m1
-	        elif x < m2:
-	            m2 = x
-	    return m2
+	# def second_smallest(numbers):
+	#     m1, m2 = float('inf'), float('inf')
+	#     for x in numbers:
+	#         if x <= m1:
+	#             m1, m2 = x, m1
+	#         elif x < m2:
+	#             m2 = x
+	#     return m2
 
 	# Initialize system parameters for Ising
 
 	spins   = 3
-	V       = -0.25
+	V       = -0.8
 	g       = -1.0
-	dt      = 0.02
-	tmax    = 8.0
+	dt      = 0.05
+	tmax    = 2.0
 	n_steps = int(tmax/dt)
 
 	# Compute the exact ground state of the Hamiltonian
@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
 	# Algorithm parameters
 
-	ths = 0.999999
+	ths = 0.99999
 	depth = 2
 
 
@@ -60,7 +60,8 @@ if __name__ == "__main__":
 
 	### Shift
 	# shift  = np.array(len(ex_params)*[0.01])
-	shift = np.random.normal(0.0, 0.01, len(ex_params))
+	# shift = np.random.normal(0.0, 0.01, len(ex_params))
+	shift = np.zeros(len(ex_params))
 
 	print("Initial shift:",shift)
 
@@ -107,4 +108,4 @@ if __name__ == "__main__":
 
 
 	algo = pVQD(H,custom_hweff_ansatz,ex_params,shift,instance,shots,H_tfunc)
-	algo.run(ths,dt,n_steps, obs_dict = obs,filename= 'data/sv_J025_T8.dat', max_iter = 50, opt = 'sgd')
+	algo.run(ths,dt,n_steps, obs_dict = obs,filename= 'data/VQD_J080_dt005_ths5.dat', max_iter = 30, opt = 'sgd')

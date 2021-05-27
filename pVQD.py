@@ -23,7 +23,6 @@ from qiskit.aqua.operators                import Z, I
 
 
 from pauli_function import *
-from hamiltonian_op import IsingHamiltonian
 
 
 # This class aims to simulate the dynamics of a quantum system

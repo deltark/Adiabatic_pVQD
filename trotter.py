@@ -27,10 +27,10 @@ from pauli_function        import *
 # Create the Hamiltonian of the system
 
 spins   = 3
-V       = -0.8
+V       = -0.25
 g       = -1.0
 
-dt = 0.01
+dt = 0.05
 tmax = 2.0
 Nt = int(tmax/dt)
 times = [i*dt for i in range(Nt+1)]
@@ -59,15 +59,15 @@ obs = {}
 # 	obs['Sx_'+str(i)]      = PauliOp(generate_pauli([i],[],spins),1.0)
 # 	obs['Sy_'+str(i)]      = PauliOp(generate_pauli([i],[i],spins),1.0)
 
-obs['Sz']      = 0.*I^spins
-obs['Sx']      = 0.*I^spins
-obs['Sy']      = 0.*I^spins
+# obs['Sz']      = 0.*I^spins
+# obs['Sx']      = 0.*I^spins
+# obs['Sy']      = 0.*I^spins
 obs['E'] = generate_ising(spins, V, g)
 
-for i in range(spins):
-	obs['Sz']      += 1/spins*PauliOp(generate_pauli([],[i],spins),1.0)
-	obs['Sx']      += 1/spins*PauliOp(generate_pauli([i],[],spins),1.0)
-	obs['Sy']      += 1/spins*PauliOp(generate_pauli([i],[i],spins),1.0)
+# for i in range(spins):
+# 	obs['Sz']      += 1/spins*PauliOp(generate_pauli([],[i],spins),1.0)
+# 	obs['Sx']      += 1/spins*PauliOp(generate_pauli([i],[],spins),1.0)
+# 	obs['Sy']      += 1/spins*PauliOp(generate_pauli([i],[i],spins),1.0)
 
 
 for (name,pauli) in obs.items():
@@ -163,4 +163,4 @@ for (obs_name,obs_pauli) in obs.items():
 	log_data['err_'+str(obs_name)] = obs_error['err_'+str(obs_name)]
 
 
-json.dump(log_data, open( 'data/J_param_080/trotter.dat','w+'))
+json.dump(log_data, open( 'data/trotter_dt010_T3.dat','w+'))
