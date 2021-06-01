@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 from scipy   import  linalg as LA
 import json
 
+import time
+
 from qiskit import IBMQ, Aer
 from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister
 
@@ -31,7 +33,7 @@ if __name__ == "__main__":
 	# Initialize system parameters for Ising
 
 	spins   = 3
-	V       = -0.8
+	V       = -0.25
 	g       = -1.0
 	dt      = 0.05
 	tmax    = 2.0
@@ -44,7 +46,7 @@ if __name__ == "__main__":
 
 	# Algorithm parameters
 
-	ths = 0.99999
+	ths = 0.9999999
 	depth = 2
 
 
@@ -108,4 +110,7 @@ if __name__ == "__main__":
 
 
 	algo = pVQD(H,custom_hweff_ansatz,ex_params,shift,instance,shots,H_tfunc)
-	algo.run(ths,dt,n_steps, obs_dict = obs,filename= 'data/VQD_J080_dt005_ths5.dat', max_iter = 30, opt = 'sgd')
+
+	begin = time.time()
+	algo.run(ths,dt,n_steps, obs_dict = obs,filename= 'data/time_compar_old.dat', max_iter = 30, opt = 'sgd')
+	print(time.time()-begin)
