@@ -5,11 +5,10 @@ from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister
 
 #=========================================
 
-def hweff_ansatz(p):
-	n_spins = 3
-	count = 0
+def hweff_ansatz(n_spins,depth,p):
+
 	circuit = QuantumCircuit(n_spins)
-	depth = 2
+	count = 0
 
 	for j in range(depth):
 
@@ -54,7 +53,44 @@ def hweff_ansatz(p):
 
 #==========================================
 
-def hweff_ansatz_adiab(p):
+def custom_hweff_ansatz(n_spins, depth, p):
+
+	count = 0
+	circuit = QuantumCircuit(n_spins)
+	t_order = n_spins
+
+	for i in range(n_spins):
+		circuit.h(i)
+
+	for j in range(depth):
+
+		for k in range(1,t_order):
+			for r in range(k+1):
+				for i in range(n_spins):
+					if i%(k+1) == r and i+k < n_spins:
+						circuit.rzz(p[count], i, i+k)
+						count = count+1
+
+		circuit.barrier()
+
+		if(j%2 == 0):
+			for i in range(n_spins):
+				circuit.rx(p[count],i)
+				count = count +1
+
+			circuit.barrier()
+
+		if(j%2 == 1):
+
+			for i in range(n_spins):
+				circuit.ry(p[count],i)
+				count = count +1
+
+	return circuit
+
+#==========================================
+
+def hweff_ansatz_adiab(n_spins, depth, p):
 	n_spins = 3
 	count = 0
 	circuit = QuantumCircuit(n_spins)
@@ -94,7 +130,7 @@ def hweff_ansatz_adiab(p):
 
 #==========================================
 
-def custom_ansatz(p):
+def custom_ansatz(n_spins, depths, p):
 
 	n_spins = 3
 	count = 0
@@ -145,40 +181,3 @@ def custom_ansatz(p):
 	return circuit
 
 #==========================================
-
-def custom_hweff_ansatz(p):
-
-	n_spins = 3
-	count = 0
-	depth = 2
-	circuit = QuantumCircuit(n_spins)
-	t_order = n_spins
-
-	for i in range(n_spins):
-		circuit.h(i)
-
-	for j in range(depth):
-
-		for k in range(1,t_order):
-			for r in range(k+1):
-				for i in range(n_spins):
-					if i%(k+1) == r and i+k < n_spins:
-						circuit.rzz(p[count], i, i+k)
-						count = count+1
-
-		circuit.barrier()
-
-		if(j%2 == 0):
-			for i in range(n_spins):
-				circuit.rx(p[count],i)
-				count = count +1
-
-			circuit.barrier()
-
-		if(j%2 == 1):
-
-			for i in range(n_spins):
-				circuit.ry(p[count],i)
-				count = count +1
-
-	return circuit

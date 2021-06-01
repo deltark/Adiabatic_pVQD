@@ -6,21 +6,18 @@ import matplotlib.pyplot as plt
 from scipy   import  linalg as LA
 
 
-
 import qiskit
 from qiskit                               import Aer, execute
 from qiskit.quantum_info 			      import Pauli
-from qiskit.aqua                          import QuantumInstance
-from qiskit.aqua.operators 			      import PauliOp, SummedOp, CircuitSampler, StateFn
+from qiskit.utils                         import QuantumInstance
+from qiskit.opflow       			      import PauliOp, SummedOp, CircuitSampler, StateFn
 from qiskit.circuit                       import ParameterVector
-from qiskit.aqua.operators.evolutions     import Trotter, PauliTrotterEvolution
+from qiskit.opflow.evolutions             import Trotter, PauliTrotterEvolution
 
-from qiskit.aqua.operators.state_fns      import CircuitStateFn
-from qiskit.aqua.operators.expectations   import PauliExpectation, AerPauliExpectation, MatrixExpectation
-from qiskit.aqua.operators.primitive_ops  import CircuitOp
-from qiskit.aqua.operators                import Z, I
-
-
+from qiskit.opflow.state_fns      import CircuitStateFn
+from qiskit.opflow.expectations   import PauliExpectation, AerPauliExpectation
+from qiskit.opflow.primitive_ops  import CircuitOp
+from qiskit.opflow                import Z, I
 
 from pauli_function import *
 
@@ -32,48 +29,79 @@ from pauli_function import *
 # Useful functions
 
 def projector_zero(n_qubits):
-	from qiskit.aqua.operators            import Z, I
+	# This function create the global projector |00...0><00...0|
+	from qiskit.opflow            import Z, I
 
-	prj = (1/np.power(2,n_qubits))*(I+Z)
+	prj_list = [0.5*(I+Z) for i in range(n_qubits)]
+	prj = prj_list[0]
 
-	for a in range(n_qubits-1):
-		prj = prj^(I+Z)
+	for a in range(1,len(prj_list)):
+		prj = prj^prj_list[a]
 
 	return prj
+
+def projector_zero_local(n_qubits):
+	# This function creates the local version of the cost function
+	# proposed by Cerezo et al: https://www.nature.com/articles/s41467-021-21728-w
+	from qiskit.opflow          import Z, I
+
+	tot_prj = 0
+
+	for k in range(n_qubits):
+		prj_list = [I for i in range(n_qubits)]
+		prj_list[k] = 0.5*(I+Z)
+		prj = prj_list[0]
+
+		for a in range(1,len(prj_list)):
+			prj = prj^prj_list[a]
+
+		#print(prj)
+
+		tot_prj += prj
+
+	tot_prj = (1/n_qubits)*tot_prj
+
+	return tot_prj
+
 
 def ei(i,n):
 	vi = np.zeros(n)
 	vi[i] = 1.0
 	return vi[:]
 
-
+## Actual pVQD class
 
 class pVQD:
 
-	def __init__(self,hamiltonian,ansatz,parameters,initial_shift,instance,shots,ham_tfunc=None):
+	def __init__(
+		self,
+		hamiltonian,
+		ansatz,
+		ansatz_reps,
+		parameters,
+		initial_shift,
+		instance,
+		shots,
+		ham_tfunc=None
+		):
 
-		'''
-		Args:
-
-		hamiltonian   : [list of operators or operator] list of Hamiltonian parts to be summed (e.g. [Hx, Hzz]),
-			or just a single Hamiltonian, time-dependent parts first
-		parameters    : [numpy.array] an array containing the parameters of the ansatz
-		initial_shift : [numpy.array] an array containing the initial guess of shifts
-		ham_tfunc     : [list of lambda functions or lambda function] list of time-dependent functions to be
-			multiplied to the Hamiltonian parts in the same order
-
-		'''
-		self.hamiltonian     = hamiltonian
+		# Make the Hamiltonian a list if it's a single one
+		if not isinstance(hamiltonian, list):
+			self.hamiltonian = [hamiltonian]
+		else:
+			self.hamiltonian = hamiltonian
 		self.instance        = instance
 		self.parameters      = parameters
 		self.num_parameters  = len(parameters)
 		self.shift           = initial_shift
 		self.shots           = shots
+		self.depth           = ansatz_reps
+		self.num_qubits      = hamiltonian[0].num_qubits
 		self.ham_tfunc       = ham_tfunc
 
 		## Initialize quantities that will be equal all over the calculation
 		self.params_vec      = ParameterVector('p',self.num_parameters)
-		self.ansatz          = ansatz(self.params_vec)
+		self.ansatz          = ansatz(self.num_qubits,self.depth,self.params_vec)
 
 
 		# ParameterVector for left and right circuit
@@ -98,9 +126,7 @@ class pVQD:
 
 		# First, create the Trotter step
 
-		# Make the Hamiltonian a list if it's a single one
-		if not isinstance(self.hamiltonian, list):
-			self.hamiltonian = [self.hamiltonian]
+
 
 		if self.ham_tfunc is not None:
 			step_h  = self.ham_params*np.array(self.hamiltonian[:len(self.ham_tfunc)])*time_step
@@ -127,7 +153,42 @@ class pVQD:
 		return state_wfn
 
 
-	# This function calculate overlap and gradient of the overlap using a global operator on the |0><0| state
+	def construct_total_circuit_local(self,time_step):
+		## This function creates the circuit that will be used to evaluate overlap and its gradient, in a local fashion
+
+		# First, create the Trotter step
+
+		# Make the Hamiltonian a list if it's a single one
+		if not isinstance(self.hamiltonian, list):
+			self.hamiltonian = [self.hamiltonian]
+
+		if self.ham_tfunc is not None:
+			step_h  = self.ham_params*np.array(self.hamiltonian[:len(self.ham_tfunc)])*time_step
+			step_h  = np.append(step_h, np.array(self.hamiltonian[len(self.ham_tfunc):])*time_step)
+		else:
+			step_h  = time_step*np.array(self.hamiltonian)
+
+		trotter = PauliTrotterEvolution(reps=1)
+		# Total Trotter circuit constructed by summing over the Hamiltonian parts
+		if len(step_h)>1:
+			U_dt    = np.sum([trotter.convert(step_h[j].exp_i()).to_circuit() for j in range(len(step_h))])
+		else:
+			U_dt    = trotter.convert(step_h[0].exp_i()).to_circuit()
+
+
+
+		l_circ  = self.ansatz.assign_parameters({self.params_vec: self.left})
+		r_circ  = self.ansatz.assign_parameters({self.params_vec: self.right})
+
+		## Projector
+		zero_prj = StateFn(projector_zero_local(self.hamiltonian[0].num_qubits),is_measurement = True)
+		state_wfn = zero_prj @ StateFn(r_circ +U_dt+ l_circ.inverse())
+
+
+		return state_wfn
+
+
+	# This function calculate overlap and gradient of the overlap
 
 	def compute_overlap_and_gradient(self,state_wfn,parameters,shift,expectator,sampler):
 
@@ -151,13 +212,13 @@ class pVQD:
 		for values in values_dict:
 			sampled_op = sampler.convert(state_wfn,params=values)
 
-			mean  = sampled_op.eval()[0].real
+			mean  = sampled_op.eval().real
 			#mean  = np.power(np.absolute(mean),2)
 			est_err = 0
 
 
 			if (not self.instance.is_statevector):
-				variance = expectator.compute_variance(sampled_op)[0].real
+				variance = expectator.compute_variance(sampled_op).real
 				est_err  = np.sqrt(variance/self.shots)
 
 			results.append([mean,est_err])
@@ -178,6 +239,7 @@ class pVQD:
 		self.gradient = g
 
 		return E,g
+
 
 	## this function does the same thing but uses SPSA
 
@@ -265,11 +327,12 @@ class pVQD:
 		grouped    = expectator.convert(braket)
 		sampled_op = sampler.convert(grouped,params = values_obs)
 
-		mean_value = sampled_op.eval()[0].real
+		#print(sampled_op.eval())
+		mean_value = sampled_op.eval().real
 		est_err = 0
 
 		if (not self.instance.is_statevector):
-			variance = expectator.compute_variance(sampled_op)[0].real
+			variance = expectator.compute_variance(sampled_op).real
 			est_err  = np.sqrt(variance/self.shots)
 
 		res = [mean_value,est_err]
@@ -298,20 +361,35 @@ class pVQD:
 		return new_shift
 
 
-	def run(self,ths,timestep,n_steps,obs_dict={},filename='algo_result.dat',max_iter = 100,opt='sgd',grad='param_shift',initial_point=None):
-
+	def run(
+		self,
+		ths,
+		timestep,
+		n_steps,
+		obs_dict={},
+		filename='algo_result.dat',
+		max_iter = 100,
+		opt='sgd',
+		cost_fun='global',
+		grad='param_shift',
+		initial_point=None
+		):
 
 
 		## initialize useful quantities once
-		if(self.instance.is_statevector):
-			expectation = PauliExpectation()
-		if(not self.instance.is_statevector):
+		if(self.instance.is_statevector and cost_fun == 'local'):
+			expectation = AerPauliExpectation()
+		else:
 			expectation = PauliExpectation()
 
 		sampler = CircuitSampler(self.instance)
 
 		## Now prepare the state in order to compute the overlap and its gradient
-		state_wfn = self.construct_total_circuit(timestep)
+		if cost_fun == 'global':
+			state_wfn = self.construct_total_circuit(timestep)
+		elif cost_fun == 'local':
+			state_wfn = self.construct_total_circuit_local(timestep)
+
 		state_wfn = expectation.convert(state_wfn)
 
 
@@ -374,7 +452,7 @@ class pVQD:
 			if self.ham_tfunc is not None:
 				#update time dependent Hamiltonian
 				state_wfn_Ht = state_wfn.assign_parameters(ham_dict[i+1])
-				print(state_wfn_Ht)
+				# print(state_wfn_Ht)
 			else:
 				state_wfn_Ht = state_wfn
 
@@ -390,11 +468,9 @@ class pVQD:
 				old_grad = np.zeros(len(self.parameters))
 				g        = np.zeros((len(self.parameters),2))
 
-			# Save data of overlaps for analysis
-			overlap_history = []
 
 
-			while self.overlap[0] < ths and count < max_iter: # and g_norm > len(params)*8e-6:
+			while self.overlap[0] < ths and count < max_iter:
 				print("Shift optimizing step:",count+1)
 				count = count +1
 
@@ -415,8 +491,6 @@ class pVQD:
 
 				print('Overlap',self.overlap)
 				print('Gradient',self.gradient[:,0])
-
-				overlap_history.append(self.overlap[0])
 
 				if opt == 'adam':
 					print("\n Adam \n")
@@ -443,7 +517,6 @@ class pVQD:
 
 			print("Shift after optimizing:",self.shift)
 			print("New parameters:"        ,self.parameters + self.shift)
-
 			print("New overlap: "          ,self.overlap[0])
 
 			self.parameters = self.parameters + self.shift
@@ -467,12 +540,8 @@ class pVQD:
 			params.append(list(self.parameters))
 
 
-
-
 		print("Total measurements:",tot_steps)
 		print("Measure per step:", tot_steps/n_steps)
-
-		print("overlap_history ", overlap_history)
 
 		# Save data on file
 
@@ -490,7 +559,5 @@ class pVQD:
 		log_data['times']       = times
 		log_data['params']      = list(params)
 		log_data['tot_steps']   = [tot_steps]
-
-		log_data['overlap_history'] = overlap_history
 
 		json.dump(log_data, open( filename,'w+'))
