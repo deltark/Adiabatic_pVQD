@@ -33,7 +33,7 @@ if __name__ == "__main__":
 	# Initialize system parameters for Ising
 
 	spins   = 3
-	V       = -0.25
+	V       = -0.8
 	g       = -1.0
 	dt      = 0.05
 	tmax    = 2.0
@@ -53,11 +53,11 @@ if __name__ == "__main__":
 	### Example circ
 
 	# ex_params = np.zeros((depth+1)*spins +depth*(spins-1)) #hweff_ansatz
-	# ex_params = np.zeros(depth*spins + depth*(spins-1)) #hweff_ansatz_adiab
+	ex_params = np.zeros(depth*spins + depth*(spins-1)) #hweff_ansatz_adiab
 	# ex_params = np.zeros(depth*(5*(spins-1) + 5*(spins-2) + spins)) #custom_ansatz t_order=3
 	# ex_params = np.zeros(depth*(5*(spins-1) + spins)) #custom_ansatz t_order=2
-	ex_params = np.zeros(depth*((spins-1) + (spins-2) + spins)) #custom_hweff_ansatz t_order=3
-	wfn = custom_hweff_ansatz(ex_params)
+	# ex_params = np.zeros(depth*((spins-1) + (spins-2) + spins)) #custom_hweff_ansatz t_order=3
+	wfn = hweff_ansatz_adiab(ex_params)
 
 
 	### Shift
@@ -109,8 +109,14 @@ if __name__ == "__main__":
 	gradient = 'sgd'
 
 
-	algo = pVQD(H,custom_hweff_ansatz,ex_params,shift,instance,shots,H_tfunc)
+	algo = pVQD(H,hweff_ansatz_adiab,ex_params,shift,instance,shots,H_tfunc)
 
 	begin = time.time()
-	algo.run(ths,dt,n_steps, obs_dict = obs,filename= 'data/time_compar_old.dat', max_iter = 30, opt = 'sgd')
+	algo.run(ths,dt,n_steps, obs_dict = obs,filename= 'data/ansatz_compar/old1.dat', max_iter = 30, opt = 'sgd')
 	print(time.time()-begin)
+
+
+#TODO
+# étude sur les 3 régimes T grand, ~1/Delta^2, petit, avec abscisse rescalée t/T: exact + trotter + pVQD
+# étude ansatz
+# comparer avec D-wave ?

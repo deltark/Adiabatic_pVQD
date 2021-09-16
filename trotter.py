@@ -27,13 +27,15 @@ from pauli_function        import *
 # Create the Hamiltonian of the system
 
 spins   = 3
-V       = -0.25
+V       = -1.0
 g       = -1.0
 
-dt = 0.05
-tmax = 2.0
-Nt = int(tmax/dt)
-times = [i*dt for i in range(Nt+1)]
+# dt = 0.05
+tmax = 0.1
+# Nt = int(tmax/dt)
+Nt = 50
+dt = tmax/Nt
+times_norm = [i/Nt for i in range(Nt+1)]
 
 
 ### Generate the Hamiltonian
@@ -46,7 +48,7 @@ H = generate_ising(spins,V,g)
 
 # Hparams = ParameterVector('H', len(Htfunc))
 #
-# Hvalues = np.array([[Htfunc[i](t) for t in times] for i in range(len(Htfunc))])
+# Hvalues = np.array([[Htfunc[i](t) for t in times_norm] for i in range(len(Htfunc))])
 # Hdict = [dict(zip(Hparams[:], Hvalues[:,i].tolist())) for i in range(Nt+1)]
 
 ### Prepare the observables to measure
@@ -62,7 +64,7 @@ obs = {}
 # obs['Sz']      = 0.*I^spins
 # obs['Sx']      = 0.*I^spins
 # obs['Sy']      = 0.*I^spins
-obs['E'] = generate_ising(spins, V, g)
+obs['E'] = generate_ising(spins, V, g) #H(T)
 
 # for i in range(spins):
 # 	obs['Sz']      += 1/spins*PauliOp(generate_pauli([],[i],spins),1.0)
@@ -113,15 +115,18 @@ def measure_obs(pauli,wfn,instance,shots):
 	return res
 
 
-### Create the circuit for different times and measure the observables
+### Create the circuit for different times_norm and measure the observables
 
 # count = 0
 for i in range(Nt+1):
 	# count +=1
 
 	print("\n-------------------")
-	print("Time: "+str(times[i]))
+	print("Time normalized: "+str(times_norm[i]))
 	print("-------------------\n")
+
+	#observable of instantaneous energy H(t)
+	obs['E(t)'] = generate_ising(spins, times_norm[i]*V, g)
 
 	#### Initialization
 	initialize = QuantumCircuit(spins)
@@ -130,8 +135,8 @@ for i in range(Nt+1):
 
 	# Now let's create the Trotter operator
 
-	for t in times[:i+1]:
-		step_h = dt*generate_ising(spins, t/tmax*V, g)
+	for t in times_norm[:i+1]:
+		step_h = dt*generate_ising(spins, t*V, g)
 		# trotter = PauliTrotterEvolution(reps=count)
 		trotter = PauliTrotterEvolution(reps=1)
 		initialize += trotter.convert(step_h.exp_i()).to_circuit()
@@ -156,11 +161,11 @@ for i in range(Nt+1):
 ## Save the measured observables
 
 log_data = {}
-log_data['times']  = times
+log_data['times']  = times_norm
 
 for (obs_name,obs_pauli) in obs.items():
 	log_data[str(obs_name)]        = obs_measure[str(obs_name)]
 	log_data['err_'+str(obs_name)] = obs_error['err_'+str(obs_name)]
 
 
-json.dump(log_data, open( 'data/trotter_dt010_T3.dat','w+'))
+json.dump(log_data, open('data/trotter/T01.dat','w+'))

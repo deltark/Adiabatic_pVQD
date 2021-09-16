@@ -1,5 +1,32 @@
 import numpy as np
 import scipy.linalg as LA
+import matplotlib.pyplot as plt
+
+import qiskit
+from qiskit                           import QuantumCircuit, ClassicalRegister, QuantumRegister, Aer, execute
+from qiskit.aqua                      import QuantumInstance
+from qiskit.quantum_info 			  import Pauli
+from qiskit.aqua.operators 			  import PauliOp, SummedOp
+from qiskit.aqua.operators.evolutions import Trotter, PauliTrotterEvolution
+
+from qiskit.aqua.operators.state_fns     import CircuitStateFn
+from qiskit.aqua.operators.primitive_ops import CircuitOp
+from qiskit.aqua.operators               import X, Y, Z, I, PauliExpectation, CircuitSampler, StateFn, MatrixExpectation
+from qiskit.circuit                      import ParameterVector
+
+
+from pauli_function        import *
+
+
+
+def second_smallest(numbers):
+    m1 = m2 = float('inf')
+    for x in numbers:
+        if x <= m1:
+            m1, m2 = x, m1
+        elif x < m2:
+            m2 = x
+    return m2
 
 def X():
     return np.array([[0, 1],[1, 0]], dtype = np.complex)
@@ -41,3 +68,34 @@ def ising(nqubits, J, G):
 def hamiltonian_eig(nqubits, J, G):
     H = ising(nqubits, J, G)
     return LA.eigh(H, eigvals_only=True)
+
+
+# Create the Hamiltonian of the system
+
+spins   = 3
+V       = -1.0
+g       = -1.0
+
+# dt = 0.05
+tmax = 1.0
+# Nt = int(tmax/dt)
+Nt = 50
+dt = tmax/Nt
+times_norm = [i/Nt for i in range(Nt+1)]
+
+eigenvalsGS = np.zeros(Nt+1)
+eigenvalsFE = np.zeros(Nt+1)
+
+for i in range(Nt+1):
+	# count +=1
+
+	print("\n-------------------")
+	print("Time normalized: "+str(times_norm[i]))
+	print("-------------------\n")
+
+	E = hamiltonian_eig(spins, times_norm[i]*V, g)
+	eigenvalsGS[i] = np.min(E)
+	eigenvalsFE[i] = second_smallest(E)
+
+np.save('data/exactGS.npy',eigenvalsGS)
+np.save('data/exactFE.npy',eigenvalsFE)
