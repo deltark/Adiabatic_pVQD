@@ -168,4 +168,4 @@ for (obs_name,obs_pauli) in obs.items():
 	log_data['err_'+str(obs_name)] = obs_error['err_'+str(obs_name)]
 
 
-json.dump(log_data, open('data/trotter/T01.dat','w+'))
+json.dump(log_data, open('data/trotter/T1_dt1.dat','w+'))

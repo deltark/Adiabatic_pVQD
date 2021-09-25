@@ -18,7 +18,6 @@ if __name__ == "__main__":
 	from pauli_function    import *
 	from pVQD			   import *
 	from ansatze           import *
-	from exact_eigenvalues import hamiltonian_eig
 
 	#tool
 	# def second_smallest(numbers):
@@ -33,11 +32,13 @@ if __name__ == "__main__":
 	# Initialize system parameters for Ising
 
 	spins   = 3
-	V       = -0.8
+	V       = -1.0
 	g       = -1.0
-	dt      = 0.05
-	tmax    = 2.0
-	n_steps = int(tmax/dt)
+	# dt      = 0.05
+	tmax    = 0.1
+	# n_steps = int(tmax/dt)
+	n_steps = 50
+	dt = tmax/n_steps
 
 	# Compute the exact ground state of the Hamiltonian
 	# Heig = hamiltonian_eig(spins, V, g)
@@ -74,6 +75,9 @@ if __name__ == "__main__":
 	H = [Hzz, Hx]
 	H_tfunc = [lambda x : x/tmax]
 
+	### indefinite integral for the Magnus expansion
+	H_integral = [lambda x : x**2/(2*tmax), lambda x : x]
+
 	print(wfn)
 	print(H)
 
@@ -109,10 +113,10 @@ if __name__ == "__main__":
 	gradient = 'sgd'
 
 
-	algo = pVQD(H,hweff_ansatz_adiab,ex_params,shift,instance,shots,H_tfunc)
+	algo = pVQD(H,hweff_ansatz_adiab,ex_params,shift,instance,shots,H_tfunc,H_integral)
 
 	begin = time.time()
-	algo.run(ths,dt,n_steps, obs_dict = obs,filename= 'data/ansatz_compar/old1.dat', max_iter = 30, opt = 'sgd')
+	algo.run(ths,dt,n_steps, obs_dict = obs,filename= 'data/VQD/T01.dat', max_iter = 30, opt = 'sgd')
 	print(time.time()-begin)
 
 

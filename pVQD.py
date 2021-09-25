@@ -50,7 +50,7 @@ def ei(i,n):
 
 class pVQD:
 
-	def __init__(self,hamiltonian,ansatz,parameters,initial_shift,instance,shots,ham_tfunc=None):
+	def __init__(self,hamiltonian,ansatz,parameters,initial_shift,instance,shots,ham_tfunc=None,ham_integ=None):
 
 		'''
 		Args:
@@ -61,6 +61,8 @@ class pVQD:
 		initial_shift : [numpy.array] an array containing the initial guess of shifts
 		ham_tfunc     : [list of lambda functions or lambda function] list of time-dependent functions to be
 			multiplied to the Hamiltonian parts in the same order
+		ham_integ     : [list of lambda functions or lambda function] list of indefinite integrals of the
+			time-dependent Hamiltonian for Magnus expansion
 
 		'''
 		self.hamiltonian     = hamiltonian
@@ -70,6 +72,7 @@ class pVQD:
 		self.shift           = initial_shift
 		self.shots           = shots
 		self.ham_tfunc       = ham_tfunc
+		self.ham_integ       = ham_integ
 
 		## Initialize quantities that will be equal all over the calculation
 		self.params_vec      = ParameterVector('p',self.num_parameters)
@@ -91,6 +94,7 @@ class pVQD:
 			else:
 				self.ham_params = ParameterVector('h', 1)
 
+		# ParameterVector for MAgnus expansion
 
 
 	def construct_total_circuit(self,time_step):
@@ -103,8 +107,11 @@ class pVQD:
 			self.hamiltonian = [self.hamiltonian]
 
 		if self.ham_tfunc is not None:
-			step_h  = self.ham_params*np.array(self.hamiltonian[:len(self.ham_tfunc)])*time_step
-			step_h  = np.append(step_h, np.array(self.hamiltonian[len(self.ham_tfunc):])*time_step)
+			#former method
+			# step_h  = self.ham_params*np.array(self.hamiltonian[:len(self.ham_tfunc)])*time_step
+			# step_h  = np.append(step_h, np.array(self.hamiltonian[len(self.ham_tfunc):])*time_step)
+			#Magnus expansion
+			step_h  = self.ham_params*np.array(self.hamiltonian)*time_step
 		else:
 			step_h  = time_step*np.array(self.hamiltonian)
 
@@ -125,6 +132,15 @@ class pVQD:
 
 
 		return state_wfn
+
+
+
+	def construct_hamiltonian(self):
+		## This function creates the circuit that will be used to measure the time-dependent energy observable
+		ham_circuit = np.sum(self.ham_params*np.array(self.hamiltonian[:len(self.ham_tfunc)])) \
+					  + np.sum(np.array(self.hamiltonian[len(self.ham_tfunc):]))
+
+		return ham_circuit
 
 
 	# This function calculate overlap and gradient of the overlap using a global operator on the |0><0| state
@@ -327,6 +343,10 @@ class pVQD:
 			ham_tfunc_values = np.array([[self.ham_tfunc[i](t) for t in times] for i in range(len(self.ham_tfunc))])
 			ham_dict = [dict(zip(self.ham_params[:], ham_tfunc_values[:,i].tolist())) for i in range(n_steps+1)]
 
+			## And the H(t) operator for observable measurement
+			ham_circuit = self.construct_hamiltonian()
+			obs_dict['E(t)'] = ham_circuit.assign_parameters(ham_dict[0])
+
 		tot_steps= 0
 
 		if initial_point != None :
@@ -375,6 +395,8 @@ class pVQD:
 				#update time dependent Hamiltonian
 				state_wfn_Ht = state_wfn.assign_parameters(ham_dict[i+1])
 				print(state_wfn_Ht)
+				#update observable
+				obs_dict['E(t)'] = ham_circuit.assign_parameters(ham_dict[i+1])
 			else:
 				state_wfn_Ht = state_wfn
 
