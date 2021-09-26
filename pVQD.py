@@ -94,7 +94,12 @@ class pVQD:
 			else:
 				self.ham_params = ParameterVector('h', 1)
 
-		# ParameterVector for MAgnus expansion
+		# ParameterVector for Magnus expansion
+		if self.ham_integ is not None:
+			if isinstance(self.ham_integ, list):
+				self.magnus_params = ParameterVector('m', len(self.ham_integ))
+			else:
+				self.magnus_params = ParameterVector('m', 1)
 
 
 	def construct_total_circuit(self,time_step):
@@ -107,11 +112,14 @@ class pVQD:
 			self.hamiltonian = [self.hamiltonian]
 
 		if self.ham_tfunc is not None:
+
 			#former method
-			# step_h  = self.ham_params*np.array(self.hamiltonian[:len(self.ham_tfunc)])*time_step
-			# step_h  = np.append(step_h, np.array(self.hamiltonian[len(self.ham_tfunc):])*time_step)
+			step_h  = self.ham_params*np.array(self.hamiltonian[:len(self.ham_tfunc)])*time_step
+			step_h  = np.append(step_h, np.array(self.hamiltonian[len(self.ham_tfunc):])*time_step)
+
 			#Magnus expansion
-			step_h  = self.ham_params*np.array(self.hamiltonian)*time_step
+			# step_h  = self.magnus_params*np.array(self.hamiltonian)
+
 		else:
 			step_h  = time_step*np.array(self.hamiltonian)
 
@@ -343,6 +351,11 @@ class pVQD:
 			ham_tfunc_values = np.array([[self.ham_tfunc[i](t) for t in times] for i in range(len(self.ham_tfunc))])
 			ham_dict = [dict(zip(self.ham_params[:], ham_tfunc_values[:,i].tolist())) for i in range(n_steps+1)]
 
+			## And the values of the integral parameters for Magnus
+			ham_integ_values = np.array([[self.ham_integ[i](times[j+1]) - self.ham_integ[i](times[j])
+							   for j in range(n_steps)] for i in range(len(self.ham_integ))])
+			magnus_dict = [dict(zip(self.magnus_params[:], ham_integ_values[:,i].tolist())) for i in range(n_steps)]
+
 			## And the H(t) operator for observable measurement
 			ham_circuit = self.construct_hamiltonian()
 			obs_dict['E(t)'] = ham_circuit.assign_parameters(ham_dict[0])
@@ -395,6 +408,10 @@ class pVQD:
 				#update time dependent Hamiltonian
 				state_wfn_Ht = state_wfn.assign_parameters(ham_dict[i+1])
 				print(state_wfn_Ht)
+
+				#magnus expansion
+				# state_wfn_Ht = state_wfn.assign_parameters(magnus_dict[i])
+
 				#update observable
 				obs_dict['E(t)'] = ham_circuit.assign_parameters(ham_dict[i+1])
 			else:

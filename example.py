@@ -35,7 +35,7 @@ if __name__ == "__main__":
 	V       = -1.0
 	g       = -1.0
 	# dt      = 0.05
-	tmax    = 0.1
+	tmax    = 10
 	# n_steps = int(tmax/dt)
 	n_steps = 50
 	dt = tmax/n_steps
@@ -116,7 +116,7 @@ if __name__ == "__main__":
 	algo = pVQD(H,hweff_ansatz_adiab,ex_params,shift,instance,shots,H_tfunc,H_integral)
 
 	begin = time.time()
-	algo.run(ths,dt,n_steps, obs_dict = obs,filename= 'data/VQD/T01.dat', max_iter = 30, opt = 'sgd')
+	algo.run(ths,dt,n_steps, obs_dict = obs,filename= 'data/VQD/T10_Nt50.dat', max_iter = 30, opt = 'sgd')
 	print(time.time()-begin)
 
 
