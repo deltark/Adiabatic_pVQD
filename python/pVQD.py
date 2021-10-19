@@ -196,16 +196,119 @@ class pVQD:
 		E[0],E[1] = results[0]
 
 		for i in range(nparameters):
-			rplus  = results[1+2*i] # 0+2i
-			rminus = results[2+2*i] # 1+2i
+			rplus  = results[1+2*i]
+			rminus = results[2+2*i]
 			# G      = (Ep - Em)/2
 			# var(G) = var(Ep) * (dG/dEp)**2 + var(Em) * (dG/dEm)**2
 			g[i,:] = (rplus[0]-rminus[0])/2.0,np.sqrt(rplus[1]**2+rminus[1]**2)/2.0
 
-		self.overlap  = E #evaluate with statevec
+		self.overlap  = E
 		self.gradient = g
 
 		return E,g
+
+	def compute_gradient(self, state_wfn, parameters, shift, expectator, sampler):
+
+		nparameters = len(parameters)
+		# build dictionary of parameters to values
+		# {left[0]: parameters[0], .. ., right[0]: parameters[0] + shift[0], ...}
+
+		# First create the dictionary for overlap
+		# values_dict = [dict(zip(self.right[:] + self.left[:],
+        #                   parameters.tolist() + (parameters + shift).tolist()))]
+
+		values_dict = []
+		# Then the values for the gradient
+		for i in range(nparameters):
+			values_dict.append(dict(zip(self.right[:] + self.left[:], parameters.tolist() + (
+				parameters + shift + ei(i, nparameters)*np.pi/2.0).tolist())))
+			values_dict.append(dict(zip(self.right[:] + self.left[:], parameters.tolist() + (
+				parameters + shift - ei(i, nparameters)*np.pi/2.0).tolist())))
+
+		# Now evaluate the circuits with the parameters assigned
+
+		results = []
+
+		for values in values_dict:
+			sampled_op = sampler.convert(state_wfn, params=values)
+
+			mean = sampled_op.eval()[0].real
+			#mean  = np.power(np.absolute(mean),2)
+			est_err = 0
+
+			if (not self.instance.is_statevector):
+				variance = expectator.compute_variance(sampled_op)[0].real
+				est_err = np.sqrt(variance/self.shots)
+
+			results.append([mean, est_err])
+
+		# E = np.zeros(2)
+		g = np.zeros((nparameters, 2))
+
+		# E[0], E[1] = results[0]
+
+		for i in range(nparameters):
+			rplus = results[2*i]  # 0+2i
+			rminus = results[1+2*i]  # 1+2i
+			# G      = (Ep - Em)/2
+			# var(G) = var(Ep) * (dG/dEp)**2 + var(Em) * (dG/dEm)**2
+			g[i, :] = (rplus[0]-rminus[0])/2.0, np.sqrt(rplus[1]**2+rminus[1]**2)/2.0
+
+		# self.overlap = E  # evaluate with statevec
+		self.gradient = g
+
+		return g
+
+	def compute_overlap(self, state_wfn, parameters, shift, expectator, sampler):
+
+		nparameters = len(parameters)
+		# build dictionary of parameters to values
+		# {left[0]: parameters[0], .. ., right[0]: parameters[0] + shift[0], ...}
+
+		# First create the dictionary for overlap
+		values_dict = [dict(zip(self.right[:] + self.left[:],
+                          parameters.tolist() + (parameters + shift).tolist()))]
+
+		# Then the values for the gradient
+		# for i in range(nparameters):
+		# 	values_dict.append(dict(zip(self.right[:] + self.left[:], parameters.tolist() + (
+		# 		parameters + shift + ei(i, nparameters)*np.pi/2.0).tolist())))
+		# 	values_dict.append(dict(zip(self.right[:] + self.left[:], parameters.tolist() + (
+		# 		parameters + shift - ei(i, nparameters)*np.pi/2.0).tolist())))
+
+		# Now evaluate the circuits with the parameters assigned
+
+		results = []
+
+		for values in values_dict:
+			sampled_op = sampler.convert(state_wfn, params=values)
+
+			mean = sampled_op.eval()[0].real
+			#mean  = np.power(np.absolute(mean),2)
+			est_err = 0
+
+			# if (not self.instance.is_statevector):
+			# 	variance = expectator.compute_variance(sampled_op)[0].real
+			# 	est_err = np.sqrt(variance/self.shots)
+
+			results.append([mean, est_err])
+
+		E = np.zeros(2)
+		# g = np.zeros((nparameters, 2))
+
+		E[0], E[1] = results[0]
+
+		# for i in range(nparameters):
+		# 	rplus = results[1+2*i]  # 0+2i
+		# 	rminus = results[2+2*i]  # 1+2i
+		# 	# G      = (Ep - Em)/2
+		# 	# var(G) = var(Ep) * (dG/dEp)**2 + var(Em) * (dG/dEm)**2
+		# 	g[i, :] = (rplus[0]-rminus[0])/2.0, np.sqrt(rplus[1]**2+rminus[1]**2)/2.0
+
+		self.overlap = E  # evaluate with statevec
+		# self.gradient = g
+
+		return E
 
 	## this function does the same thing but uses SPSA
 
@@ -358,9 +461,9 @@ class pVQD:
 			ham_dict = [dict(zip(self.ham_params[:], ham_tfunc_values[:,i].tolist())) for i in range(n_steps+1)]
 
 			## And the values of the integral parameters for Magnus
-			ham_integ_values = np.array([[self.ham_integ[i](times[j+1]) - self.ham_integ[i](times[j])
-							   for j in range(n_steps)] for i in range(len(self.ham_integ))])
-			magnus_dict = [dict(zip(self.magnus_params[:], ham_integ_values[:,i].tolist())) for i in range(n_steps)]
+			# ham_integ_values = np.array([[self.ham_integ[i](times[j+1]) - self.ham_integ[i](times[j])
+			# 				   for j in range(n_steps)] for i in range(len(self.ham_integ))])
+			# magnus_dict = [dict(zip(self.magnus_params[:], ham_integ_values[:,i].tolist())) for i in range(n_steps)]
 
 			## And the H(t) operator for observable measurement
 			ham_circuit = self.construct_hamiltonian()
@@ -447,6 +550,13 @@ class pVQD:
 					old_grad = np.asarray(g[:,0])
 				## Measure energy and gradient
 
+				if grad == 'separated_param_shift':
+					overlap_backend = Aer.get_backend('statevector_simulator')
+					overlap_instance = QuantumInstance(backend=overlap_backend, shots=1)
+					overlap_sampler = CircuitSampler(overlap_instance)
+					E   = self.compute_overlap(state_wfn_Ht,self.parameters,self.shift,expectation,overlap_sampler)
+					g = self.compute_gradient(
+						state_wfn_Ht, self.parameters, self.shift, expectation, sampler)
 				if grad == 'param_shift':
 					E,g = self.compute_overlap_and_gradient(state_wfn_Ht,self.parameters,self.shift,expectation,sampler)
 				if grad == 'spsa':

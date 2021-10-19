@@ -21,7 +21,7 @@ tmax      = 2.0
 J         = -1.0
 B         = -1.0
 
-step      = "magnus"
+step      = "trotter"
 shots     = 2000
 q_circ    = alternate_timedep_ansatz(n_spins,depth,zeros(500))
 

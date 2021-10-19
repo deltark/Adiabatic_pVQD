@@ -77,9 +77,9 @@ V       = -1.0
 g       = -1.0
 
 # dt = 0.05
-tmax = 1.0
+tmax = 3.0
 # Nt = int(tmax/dt)
-Nt = 50
+Nt = 60
 dt = tmax/Nt
 times_norm = [i/Nt for i in range(Nt+1)]
 

@@ -14,6 +14,13 @@ from qiskit.aqua                      import QuantumInstance
 from qiskit.aqua.operators            import Z, I, X, Y
 from qiskit.aqua.operators 			  import PauliOp, SummedOp
 
+from qiskit.providers.aer.noise import NoiseModel
+
+# Build noise model from backend properties
+provider = IBMQ.load_account()
+backend = provider.get_backend('ibmq_santiago')
+noise_model = NoiseModel.from_backend(backend)
+
 if __name__ == "__main__":
 	from pauli_function    import *
 	from pVQD			   import *
@@ -34,11 +41,11 @@ if __name__ == "__main__":
 	spins   = 3
 	V       = -1.0
 	g       = -1.0
-	# dt      = 0.05
-	tmax    = 10
-	# n_steps = int(tmax/dt)
-	n_steps = 50
-	dt = tmax/n_steps
+	dt      = 0.05
+	tmax    = 3.0
+	n_steps = int(tmax/dt)
+	# n_steps = 50
+	# dt = tmax/n_steps
 
 	# Compute the exact ground state of the Hamiltonian
 	# Heig = hamiltonian_eig(spins, V, g)
@@ -87,8 +94,8 @@ if __name__ == "__main__":
 
 	### Backend
 	# shots = 400000
-	shots = 1
-	backend  = Aer.get_backend('statevector_simulator')
+	shots = 4000
+	backend  = Aer.get_backend('qasm_simulator', noise_model=noise_model)
 	instance = QuantumInstance(backend=backend,shots=shots)
 
 	### Prepare the observables to measure
@@ -117,10 +124,10 @@ if __name__ == "__main__":
 	gradient = 'sgd'
 
 
-	algo = pVQD(H,custom_hweff_ansatz,ex_params,shift,instance,shots,H_tfunc,H_integral,H_m2)
+	algo = pVQD(H,custom_hweff_ansatz,ex_params,shift,instance,shots,H_tfunc)
 
 	begin = time.time()
-	algo.run(ths,dt,n_steps, obs_dict = obs,filename= 'data/VQD/T10_Nt50_depth3.dat', max_iter = 30, opt = 'sgd')
+	algo.run(ths,dt,n_steps, obs_dict = obs,filename= 'data/VQD/noisy_shots2k.dat', max_iter = 30, opt = 'sgd', grad = 'separated_param_shift')
 	print(time.time()-begin)
 
 
