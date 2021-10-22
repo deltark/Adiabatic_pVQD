@@ -8,7 +8,7 @@ mksize = 4
 exactGS = np.load('data/exactGS.npy')
 # exactFE = np.load('data/exactFE.npy')
 
-VQD = json.load(open('data/VQD/noisy_shots4k.dat'))
+VQD = json.load(open('data/VQD/noisy_shots8k.dat'))
 times = VQD["times"]
 
 plt.plot(times, exactGS, linestyle='--', color='black')

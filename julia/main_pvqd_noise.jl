@@ -13,7 +13,9 @@
 
 using Yao,YaoExtensions,PyCall,YaoPlots, JSON, Statistics, Yao.AD, Compose
 using QuAlgorithmZoo: Adam, update!
-# using StatsBase, Yao.AD: Rotor #for debugging
+using PastaQ
+
+include("YaoPastaQ.jl")
 
 
 # include all the useful functions for VpVQD
@@ -100,12 +102,14 @@ for (k,t_step) in enumerate(t_steps)
 	if step=="trotter"
 		trott_circ = ising_trotter_step(n_qubits,dt,t_step/tmax*J,B)
 		tot_circ = chain(l_circ,NoParams(trott_circ),NoParams(r_circ'))
+
 		# YaoPlots.plot(trott_circ) |> SVG("trott_circ.svg")
 	elseif step=="magnus"
 		mag1_circ = ising_trotter_step(n_qubits,dt,(2*t_step+dt)/(2*tmax)*J,B)
 		mag2_circ = magnus2_step(n_qubits,dt,J,B,tmax)
 		tot_circ = chain(l_circ,NoParams(mag1_circ),NoParams(mag2_circ),NoParams(r_circ'))
 	end
+    pasta_circ = YaoPastaQ.genlist(tot_circ)
 	# tot_circ = chain(l_circ,trott_circ,r_circ')
 
 	# Yao.AD.generator(c::CPhaseGate{N}) where N = ControlBlock{N}(c.ctrl_locs, c.ctrl_config, Z, c.locs)

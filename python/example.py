@@ -94,7 +94,7 @@ if __name__ == "__main__":
 
 	### Backend
 	# shots = 400000
-	shots = 4000
+	shots = 8000
 	backend  = Aer.get_backend('qasm_simulator', noise_model=noise_model)
 	instance = QuantumInstance(backend=backend,shots=shots)
 
@@ -127,7 +127,7 @@ if __name__ == "__main__":
 	algo = pVQD(H,custom_hweff_ansatz,ex_params,shift,instance,shots,H_tfunc)
 
 	begin = time.time()
-	algo.run(ths,dt,n_steps, obs_dict = obs,filename= 'data/VQD/noisy_shots2k.dat', max_iter = 30, opt = 'sgd', grad = 'separated_param_shift')
+	algo.run(ths,dt,n_steps, obs_dict = obs,filename= 'data/VQD/noisy_shots8k.dat', max_iter = 50, opt = 'sgd', grad = 'separated_param_shift')
 	print(time.time()-begin)
 
 
