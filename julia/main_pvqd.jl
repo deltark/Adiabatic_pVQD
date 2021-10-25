@@ -18,6 +18,7 @@ using QuAlgorithmZoo: Adam, update!
 
 # include all the useful functions for VpVQD
 include("pvqd_functions.jl")
+include("pvqd_opdiff.jl")
 import PyPlot; const plt = PyPlot
 
 # Now import useful subroutines from python
@@ -33,13 +34,14 @@ begin
 	dt         = 0.05
 	tmax       = 3.0
 	n_dt       = tmax/dt
-	print("n_dt: ",n_dt)
+	print("n_dt: ",n_dt,"\n")
 	# n_dt       = 40
 	# tmax       = dt*n_dt
 	## For ansatz
 	depth      = 2
-	shots      = nothing
+	shots      = 8000
 	step       = "trotter"
+	noise      = ("amplitude_damping", (γ = 0.01,))
 end
 
 
@@ -134,7 +136,7 @@ for (k,t_step) in enumerate(t_steps)
 		if shots===nothing
 			grad_input, grad_params = expect'(g_obs, zero_state(n_qubits) => tot_circ)
 		else
-			grad_params = faithful_grad(g_obs, zero_state(n_qubits) => tot_circ, l_circ; nshots=shots)
+			grad_params = faithful_grad(g_obs, zero_state(n_qubits) => tot_circ, l_circ, noise; nshots=shots)
 		end
 
 		## feed the gradients into the circuit.
@@ -174,7 +176,7 @@ save_data = true
 if save_data
 	res = Dict("parameters"=>parameters_list,"initial_fidelities"=>initial_fidelities,"final_fidelities"=>[final_fidelities],"ansatz_reps"=>[depth],"spins"=> [n_qubits],"dt"=>[dt],"times"=>t_steps)
 	j_res = JSON.json(res)
-	open("data/p-VQD/depth"*string(depth)*"_T"*string(tmax)*"_dt"*string(dt)*"_nshots"*string(shots)*"_opt"*string(opt_steps)*"_"*step*".dat","w") do j
+	open("data/p-VQD/depth"*string(depth)*"_T"*string(tmax)*"_dt"*string(dt)*"_nshots"*string(shots)*"_opt"*string(opt_steps)*"_noise"*string(noise[1])*".dat","w") do j
 		write(j,j_res)
 	end
 end

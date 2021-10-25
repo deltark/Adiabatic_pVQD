@@ -18,13 +18,15 @@ nshots=10
 
 # ╔═╡ 3cb7b2ce-b483-444a-ac84-629a43c21197
 yao_circ = chain(N,put(1=>H),cnot(1,2))
+# print(YaoBase.nqubits(yao_circ))
 
 # ╔═╡ da9ab1d5-cbbf-40e4-ad88-aa6aea2bd688
-YaoPlots.plot(yao_circ)
+# YaoPlots.plot(yao_circ)
 
 # ╔═╡ 62f2e913-398d-444f-be37-8a5aeb3f8a3c
 samples = Yao.measure(zero_state(N) |> yao_circ; nshots=nshots)
 print("yao: ", samples, "\n")
+print(mean(samples))
 
 # ╔═╡ 3bafcfd4-4621-4c4d-9adb-5a3012e43dd0
 statev = statevec(zero_state(N) |> yao_circ)
@@ -43,19 +45,46 @@ pasta_data = getsamples(ψ, bases)
 print("pasta: ", pasta_data, "\n")
 
 # ╔═╡ 778ac036-cd3d-4395-8322-bc018271f454
-processed_pasta = []
-for pasta in eachrow(pasta_data)
-    # print(pasta[1].second, pasta[2].second, " ")
-    push!(processed_pasta, BitArray([pasta[1].second pasta[2].second]))
-end
+# processed_pasta = []
+# for pasta in eachrow(pasta_data)
+#     # print(pasta[1].second, pasta[2].second, " ")
+#     # push!(processed_pasta, YaoExtensions.BitBasis.bit_literal(pasta[1].second, pasta[2].second))
+#     push!(processed_pasta, prod(pasta[:].second))
+# end
+processed_pasta = prod(last.(pasta_data); dims=2)
 print("\n")
 
 print(processed_pasta)
+print(1 .-processed_pasta)
+
+print(mean(1 .-processed_pasta),"\n")
 
 
-print("\n")
+# g_obs = projector_zero(N)
+# print(g_obs)
+# pasta_obs = YaoPastaQ.genlist(g_obs)
+# print("proj0 pasta: ")
+# print(pasta_obs)
 
-translated_bitstring = YaoExtensions.BitBasis.BitStr64{2}.(processed_pasta)
+# function noisy_grad(nqubits, pasta_circuit, noise_model)
+#     bases = randombases(N, nshots; local_basis = ["Z"])
+
+#     ψ = runcircuit(nqubits, pasta_circuit, noise = noise_model)
+
+#     pasta_data = getsamples(ψ, bases)
+
+#     processed_pasta = []
+#     for pasta in eachrow(pasta_data)
+#         push!(processed_pasta, YaoExtensions.BitBasis.bit_literal(pasta[1].second, pasta[2].second))
+#     end
+
+#     expect = mean(processed_pasta)
+
+
+
+# print("\n")
+
+# translated_bitstring = YaoExtensions.BitBasis.BitStr64{2}.(processed_pasta)
 
 # function pasta_samples_to_yao(pasta_samples):
 
