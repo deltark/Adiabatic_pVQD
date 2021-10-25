@@ -31,14 +31,14 @@ begin
 	J          = -1.0
 	B          = -1.0
 	dt         = 0.05
-	tmax       = 2.0
+	tmax       = 3.0
 	n_dt       = tmax/dt
 	print("n_dt: ",n_dt)
 	# n_dt       = 40
 	# tmax       = dt*n_dt
 	## For ansatz
 	depth      = 2
-	shots      = 2000
+	shots      = nothing
 	step       = "trotter"
 end
 

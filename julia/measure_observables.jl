@@ -17,17 +17,20 @@ pushfirst!(PyVector(pyimport("sys")."path"), "")
 n_spins   = 3
 depth     = 2
 dt        = 0.05
-tmax      = 2.0
+tmax      = 3.0
+opt_steps = 50
 J         = -1.0
 B         = -1.0
 
 step      = "trotter"
-shots     = 2000
+shots     = nothing
 q_circ    = alternate_timedep_ansatz(n_spins,depth,zeros(500))
 
 
 data     = JSON.parse(open("data/p-VQD/depth"*string(depth)*"_T"*string(tmax)*"_dt"*string(dt)*"_nshots"*string(shots)*"_opt"*string(opt_steps)*"_"*step*".dat","r"))
 exact    = JSON.parse(open("data/exact/T"*string(tmax)*"_dt0.05.dat","r"))
+noise    = JSON.parse(open("data/p-VQD/stataverage_12_noisy_8k.dat","r"))
+
 
 # Now for every timestep mesure the obs and save the values
 obs_values = []
@@ -52,9 +55,22 @@ end
 
 # Now plot the data
 
-# plt.plot(exact["times"],exact["energies"],linestyle="dashed",color="black")
-plt.plot(times,obs_values)
+plt.plot(exact["times"],exact["energies"],linestyle="dashed",color="black")
+# plt.plot(times,obs_values,marker="o",linestyle="",markersize=4)
+# plt.errorbar(times,noise["mean_energy"],yerr=noise["std"],marker="o",linestyle="",markersize=4)
+
+
+#Plot to show how much worse Trotter is
+time_steps = [0.4, 0.6]
+legend = ["exact"]
+for dt in time_steps
+	trotter  = JSON.parse(open("data/trotter/T"*string(tmax)*"_dt"*string(dt)*"_nshots"*string(shots)*".dat","r"))
+	plt.plot(trotter["times"],trotter["energies"],"o",markersize=4,linestyle="-")
+	push!(legend, ("dt = "*string(dt)))
+end
+
 plt.xlabel(L"t")
 plt.ylabel(L"$\langle H(t) \rangle$")
+plt.legend(legend)
 #
 plt.gcf()

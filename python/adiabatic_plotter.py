@@ -8,11 +8,27 @@ mksize = 4
 exactGS = np.load('data/exactGS.npy')
 # exactFE = np.load('data/exactFE.npy')
 
-VQD = json.load(open('data/VQD/noisy_shots8k.dat'))
-times = VQD["times"]
+svVQD = json.load(open('data/VQD/T3_dt05_sv.dat'))
+times = svVQD["times"]
+
+noisesims = [json.load(open('data/VQD/noisy_shots8k_run'+str(i)+'.dat'))['E(t)'] for i in range(1,13)]
+
+mean = np.mean(noisesims, 0)
+std  = np.std(noisesims, 0)
+
+dico = {}
+dico["mean_energy"] = list(mean)
+dico["std"] = list(std)
+dico["times"] = times
+
+json.dump(dico, open("data/stataverage_12_noisy_8k.dat", 'w+'))
+
 
 plt.plot(times, exactGS, linestyle='--', color='black')
-plt.plot(times, VQD['E(t)'])
+plt.plot(times, svVQD['E(t)'], 'o')
+plt.errorbar(times, mean, yerr = std, marker = 'o', markersize = mksize, linestyle = '')
+
+plt.legend(['exact', 'statevector', '8k shots + noise'])
 
 
 # plt.errorbar(times, old_ansatz['E'])

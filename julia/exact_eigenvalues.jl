@@ -41,7 +41,7 @@ ground_energy(matrix) = minimum(eigvals(matrix))
 ## Sys data
 n_spins   = 3
 dt        = 0.05
-tmax      = 5.0
+tmax      = 3.0
 n_dt      = tmax/dt
 J         = -1.0
 B         = -1.0
