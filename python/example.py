@@ -17,7 +17,7 @@ from qiskit.aqua.operators 			  import PauliOp, SummedOp
 from qiskit.providers.aer.noise import NoiseModel
 
 # Build noise model from backend properties
-provider = IBMQ.load_account()
+provider = IBMQ.enable_account("210d86ba5de279939c25b694d52b9125670e5de499f4daaa632e6068936f3f74ece4503dae344774501af1aded7c068bdc948a6062c1983c41bfeb77a1501dcf")
 backend = provider.get_backend('ibmq_santiago')
 noise_model = NoiseModel.from_backend(backend)
 
@@ -41,11 +41,11 @@ if __name__ == "__main__":
 	spins   = 3
 	V       = -1.0
 	g       = -1.0
-	dt      = 0.05
+	# dt      = 0.05
 	tmax    = 3.0
-	n_steps = int(tmax/dt)
-	# n_steps = 50
-	# dt = tmax/n_steps
+	# n_steps = int(tmax/dt)
+	n_steps = 1
+	dt = tmax/n_steps
 
 	# Compute the exact ground state of the Hamiltonian
 	# Heig = hamiltonian_eig(spins, V, g)
@@ -84,19 +84,19 @@ if __name__ == "__main__":
 	H_tfunc = [lambda x : x/tmax]
 
 	### indefinite integral for the Magnus expansion
-	H_integral = [lambda x : x**2/(2*tmax), lambda x : x]
-	### second order Magnus, I have no idea how to make this more general aaaa
-	H_m2 = dt**2/(6*tmax)*np.array([generate_magnus_2(spins, V, g)])
-	print(H_m2)
+	# H_integral = [lambda x : x**2/(2*tmax), lambda x : x]
+	# ### second order Magnus, I have no idea how to make this more general aaaa
+	# H_m2 = dt**2/(6*tmax)*np.array([generate_magnus_2(spins, V, g)])
+	# print(H_m2)
 
 	# print(wfn)
 	# print(H)
 
 	### Backend
 	# shots = 400000
-	# shots = 8000
-	shots = 1
-	backend = Aer.get_backend('statevector_simulator')
+	shots = 8000
+	# shots = 1
+	# backend = Aer.get_backend('statevector_simulator')
 	# backend  = Aer.get_backend('qasm_simulator', noise_model=noise_model)
 	instance = QuantumInstance(backend=backend,shots=shots)
 
@@ -112,9 +112,9 @@ if __name__ == "__main__":
 	#Energy
 	obs['E'] = generate_ising(spins,V,g)
 
-	for (name,pauli) in obs.items():
-		print(name)
-		print(pauli)
+	# for (name,pauli) in obs.items():
+	# 	print(name)
+	# 	print(pauli)
 
 
 	### Initialize the algorithm
@@ -129,7 +129,7 @@ if __name__ == "__main__":
 	algo = pVQD(H,custom_hweff_ansatz,ex_params,shift,instance,shots,H_tfunc)
 
 	begin = time.time()
-	algo.run(ths,dt,n_steps, obs_dict = obs,filename= 'data/VQD/T3_dt05_sv.dat', max_iter = 50, opt = 'sgd', grad = 'separated_param_shift')
+	algo.run(ths,dt,n_steps, obs_dict = obs,filename= 'data/VQD/single_step_test_santiago.dat', max_iter = 50, opt = 'sgd', grad = 'separated_param_shift')
 	print(time.time()-begin)
 
 
@@ -137,6 +137,3 @@ if __name__ == "__main__":
 # étude sur les 3 régimes T grand, ~1/Delta^2, petit, avec abscisse rescalée t/T: exact + trotter + pVQD
 # étude ansatz
 # comparer avec D-wave ?
-
-
-#gradient w/ shots, loss w/ statevector

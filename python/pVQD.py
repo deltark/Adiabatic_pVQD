@@ -1,3 +1,4 @@
+from logging import log
 import numpy as np
 import json
 import functools
@@ -97,6 +98,8 @@ class pVQD:
 			else:
 				self.ham_params = ParameterVector('h', 1)
 
+		self.njobs = 0 #counter for number of jobs submitted to hardware
+
 		# ParameterVector for Magnus expansion
 		# if self.ham_integ is not None:
 		# 	if isinstance(self.ham_integ, list):
@@ -187,6 +190,7 @@ class pVQD:
 			if (not self.instance.is_statevector):
 				variance = expectator.compute_variance(sampled_op)[0].real
 				est_err  = np.sqrt(variance/self.shots)
+				self.njobs += 1
 
 			results.append([mean,est_err])
 
@@ -239,6 +243,7 @@ class pVQD:
 			if (not self.instance.is_statevector):
 				variance = expectator.compute_variance(sampled_op)[0].real
 				est_err = np.sqrt(variance/self.shots)
+				self.njobs += 1
 
 			results.append([mean, est_err])
 
@@ -358,6 +363,7 @@ class pVQD:
 			if (not self.instance.is_statevector):
 				variance = expectator.compute_variance(sampled_op)[0].real
 				est_err  = np.sqrt(variance/self.shots)
+				self.njobs += 1
 
 			results.append([mean,est_err])
 
@@ -502,6 +508,13 @@ class pVQD:
 		err_init_fid = []
 		params = []
 
+		interm_fidelities = [] #save intermediate fidelities
+		shifts = [] #save all parameter shifts
+		gradients = [] #save all evaluated gradients
+		err_grad = []
+		grad_norms = []
+		njobs = [] #save the number of jobs submitted to hardware
+
 		params.append(list(self.parameters))
 
 
@@ -512,6 +525,14 @@ class pVQD:
 			print("Shift before optimizing this step:",self.shift)
 			print("Initial parameters:", self.parameters)
 			print('\n================================== \n')
+
+			interm_fid_t = [] #will go inside interm_fidelities
+			shifts_t = [] #will go inside shifts
+			grad_t = []
+			err_grad_t = []
+			grad_norms_t = []
+
+			self.njobs = 0 #reset njobs
 
 			if self.ham_tfunc is not None:
 				#update time dependent Hamiltonian
@@ -555,7 +576,7 @@ class pVQD:
 					overlap_instance = QuantumInstance(backend=overlap_backend, shots=1)
 					overlap_sampler = CircuitSampler(overlap_instance)
 					E   = self.compute_overlap(state_wfn_Ht,self.parameters,self.shift,expectation,overlap_sampler)
-					g = self.compute_gradient(
+					g   = self.compute_gradient(
 						state_wfn_Ht, self.parameters, self.shift, expectation, sampler)
 				if grad == 'param_shift':
 					E,g = self.compute_overlap_and_gradient(state_wfn_Ht,self.parameters,self.shift,expectation,sampler)
@@ -568,10 +589,14 @@ class pVQD:
 					initial_fidelities.append(self.overlap[0])
 					err_init_fid.append(self.overlap[1])
 
+					# shifts_t.append(list(self.shift))
+
 				print('Overlap',self.overlap)
-				print('Gradient',self.gradient[:,0])
+				print('Gradient', self.gradient[:, 0])
 
 				overlap_history.append(self.overlap[0])
+
+				interm_fid_t.append(self.overlap[0])
 
 				if opt == 'adam':
 					print("\n Adam \n")
@@ -586,9 +611,15 @@ class pVQD:
 				elif opt== 'sgd':
 					self.shift = self.shift + g[:,0]
 
+				shifts_t.append(list(self.shift))
+
 				#Norm of the gradient
 				g_vec = np.asarray(g[:,0])
 				g_norm = np.linalg.norm(g_vec)
+
+				grad_t.append(list(self.gradient[:, 0]))
+				err_grad_t.append(list(self.gradient[:, 1]))
+				grad_norms_t.append(g_norm)
 
 
 			# Update parameters
@@ -618,6 +649,14 @@ class pVQD:
 			fidelities.append(self.overlap[0])
 			err_fin_fid.append(self.overlap[1])
 
+			interm_fidelities.append(list(interm_fid_t))
+			shifts.append(list(shifts_t))
+
+			gradients.append(list(grad_t))
+			err_grad.append(list(err_grad_t))
+			grad_norms.append(list(grad_norms_t))
+
+			njobs.append(self.njobs)
 
 			params.append(list(self.parameters))
 
@@ -627,7 +666,7 @@ class pVQD:
 		print("Total measurements:",tot_steps)
 		print("Measure per step:", tot_steps/n_steps)
 
-		print("overlap_history ", overlap_history)
+		# print("overlap_history ", overlap_history)
 
 		# Save data on file
 
@@ -646,6 +685,13 @@ class pVQD:
 		log_data['params']      = list(params)
 		log_data['tot_steps']   = [tot_steps]
 
-		log_data['overlap_history'] = overlap_history
+		log_data['interm_F'] = list(interm_fidelities)
+		log_data['shifts'] = list(shifts)
+		log_data['gradients'] = list(gradients)
+		log_data['err_grad'] = list(err_grad)
+		log_data['norm_grad'] = list(grad_norms)
+		log_data['njobs'] = list(njobs)
+
+		# log_data['overlap_history'] = overlap_history
 
 		json.dump(log_data, open( filename,'w+'))
