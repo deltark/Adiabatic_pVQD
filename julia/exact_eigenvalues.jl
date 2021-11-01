@@ -39,9 +39,9 @@ ground_energy(matrix) = minimum(eigvals(matrix))
 ##
 
 ## Sys data
-n_spins   = 3
+n_spins   = 7
 dt        = 0.05
-tmax      = 3.0
+tmax      = 4.0
 n_dt      = tmax/dt
 J         = -1.0
 B         = -1.0
@@ -57,6 +57,6 @@ end
 
 res = Dict("spins"=> [n_spins],"dt"=>[dt],"times"=>t_steps,"energies"=>energies)
 j_res = JSON.json(res)
-open("data/exact/T"*string(tmax)*"_dt"*string(dt)*".dat","w") do j
+open("data/exact/nqubits"*string(n_spins)*"_T"*string(tmax)*"_dt"*string(dt)*".dat","w") do j
 	write(j,j_res)
 end

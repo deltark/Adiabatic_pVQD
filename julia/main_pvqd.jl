@@ -28,20 +28,22 @@ pushfirst!(PyVector(pyimport("sys")."path"), "")
 
 ## Now we can declare all the important quantities for the system
 begin
-	n_qubits   = 3
+	n_qubits   = 7
+	NN         = n_qubits - 1 #nearest neighbor correlation in ansatz (all-to-all is preferable)
 	J          = -1.0
 	B          = -1.0
-	dt         = 0.05
-	tmax       = 3.0
-	n_dt       = tmax/dt
+	dt         = 0.07
+	tmax       = 7.0
+	n_dt       = round(tmax/dt)
 	print("n_dt: ",n_dt,"\n")
 	# n_dt       = 40
 	# tmax       = dt*n_dt
 	## For ansatz
-	depth      = 2
-	shots      = 8000
+	depth      = 3
+	shots      = nothing
 	step       = "trotter"
-	noise      = ("amplitude_damping", (γ = 0.01,))
+	# noise      = ("amplitude_damping", (γ = 0.01,))
+	noise      = nothing
 end
 
 
@@ -50,8 +52,8 @@ end
 n_params = depth*((n_qubits-1) + (n_qubits-2) + n_qubits)
 ex_params = zeros(n_params)
 
-l_circ     = alternate_timedep_ansatz(n_qubits,depth,ex_params)
-r_circ     = alternate_timedep_ansatz(n_qubits,depth,ex_params)
+l_circ     = alternate_timedep_ansatz(n_qubits,depth,zeros(500))
+r_circ     = alternate_timedep_ansatz(n_qubits,depth,zeros(500))
 # trott_circ = ising_trotter_step(n_qubits,dt,J,B)
 
 
@@ -176,7 +178,7 @@ save_data = true
 if save_data
 	res = Dict("parameters"=>parameters_list,"initial_fidelities"=>initial_fidelities,"final_fidelities"=>[final_fidelities],"ansatz_reps"=>[depth],"spins"=> [n_qubits],"dt"=>[dt],"times"=>t_steps)
 	j_res = JSON.json(res)
-	open("data/p-VQD/depth"*string(depth)*"_T"*string(tmax)*"_dt"*string(dt)*"_nshots"*string(shots)*"_opt"*string(opt_steps)*"_noise"*string(noise[1])*".dat","w") do j
+	open("data/p-VQD/nqubits"*string(n_qubits)*"_depth"*string(depth)*"_T"*string(tmax)*"_dt"*string(dt)*"_nshots"*string(shots)*"_opt"*string(opt_steps)*"_NN"*string(NN)*".dat","w") do j
 		write(j,j_res)
 	end
 end

@@ -150,7 +150,7 @@ def custom_hweff_ansatz(p):
 
 	n_spins = 3
 	count = 0
-	depth = 2
+	depth = 1
 	circuit = QuantumCircuit(n_spins)
 	t_order = n_spins
 
@@ -180,5 +180,7 @@ def custom_hweff_ansatz(p):
 			for i in range(n_spins):
 				circuit.ry(p[count],i)
 				count = count +1
+			
+			circuit.barrier()
 
 	return circuit

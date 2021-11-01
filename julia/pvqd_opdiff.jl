@@ -33,11 +33,11 @@ export faithful_grad
     r1, r2
 end
 
-@inline function _expect(circuit::AbstractBlock, reg::ArrayReg; nshots=nothing)
+@inline function _expect(op::AbstractBlock, reg::ArrayReg; nshots=nothing)
     if nshots === nothing
         expect(op, reg)
     else
-        mean(measure(op, reg; nshots=nshots))
+        mean(Yao.measure(op, reg; nshots=nshots))
     end
 end
 

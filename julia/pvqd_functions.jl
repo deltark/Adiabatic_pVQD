@@ -84,7 +84,7 @@ function alternate_trotter_ansatz(n,depth,params)
 end
 
 function alternate_timedep_ansatz(n,depth,params)
-	neigh = 2 #nth nearest neighbor for the Rzz layer
+	neigh = n-1 #nth nearest neighbor for the Rzz layer
 
 	count = 1
 	# circ = chain(n, put(i=> I2) for i in 1:n)
@@ -184,11 +184,11 @@ function spin_z(n,site)
 	return obs
 end
 
-function spin_zz(n,site)
+function spin_zz(n,site1,site2)
 	op_list = []
 
 	for i in 1:n
-		if i==site || i==site+1
+		if i==site1 || i==site2
 			push!(op_list,Z)
 		else 
 			push!(op_list,I2)
@@ -204,7 +204,7 @@ function hamiltonian(n,J,B)
 	op_list = []
 
 	for i in 1:n-1
-		push!(op_list,J*spin_zz(n,i))
+		push!(op_list,J*spin_zz(n,i,i+1))
 	end
 	for i in 1:n
 		push!(op_list,B*spin_x(n,i))

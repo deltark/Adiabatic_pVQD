@@ -56,7 +56,7 @@ if __name__ == "__main__":
 
 	# ths = 0.9999999
 	ths = 0.99999
-	depth = 2
+	depth = 1
 
 
 	### Example circ
@@ -129,7 +129,7 @@ if __name__ == "__main__":
 	algo = pVQD(H,custom_hweff_ansatz,ex_params,shift,instance,shots,H_tfunc)
 
 	begin = time.time()
-	algo.run(ths,dt,n_steps, obs_dict = obs,filename= 'data/VQD/single_step_test_santiago.dat', max_iter = 50, opt = 'sgd', grad = 'separated_param_shift')
+	algo.run(ths,dt,n_steps, obs_dict = obs,filename= 'data/VQD/single_step_depth1_test_santiago.dat', max_iter = 3, opt = 'sgd', grad = 'separated_param_shift')
 	print(time.time()-begin)
 
 
