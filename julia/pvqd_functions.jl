@@ -83,8 +83,8 @@ function alternate_trotter_ansatz(n,depth,params)
 	return circ
 end
 
-function alternate_timedep_ansatz(n,depth,params)
-	neigh = n-1 #nth nearest neighbor for the Rzz layer
+function alternate_timedep_ansatz(n,depth,NN,params)
+	neigh = NN #nth nearest neighbor for the Rzz layer
 
 	count = 1
 	# circ = chain(n, put(i=> I2) for i in 1:n)
