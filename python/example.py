@@ -137,3 +137,7 @@ if __name__ == "__main__":
 # étude sur les 3 régimes T grand, ~1/Delta^2, petit, avec abscisse rescalée t/T: exact + trotter + pVQD
 # étude ansatz
 # comparer avec D-wave ?
+
+
+#do plots t/T
+#correlation exact sim for more qubits

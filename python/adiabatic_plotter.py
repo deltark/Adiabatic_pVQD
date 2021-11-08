@@ -31,7 +31,7 @@ times = svVQD["times"]
 # for i in range(len(ex_params)):
 #     plt.plot(range(optsteps), grads[i])
 
-noisesims = [json.load(open('data/VQD/noisy_shots8k_depth1_run'+str(i)+'.dat'))['E(t)'] for i in range(1,13)]
+noisesims = [json.load(open('data/VQD/noisy_shots8k_depth1_NN1_run'+str(i)+'.dat'))['E(t)'] for i in range(1,13)]
 
 mean = np.mean(noisesims, 0)
 std  = np.std(noisesims, 0)
@@ -41,7 +41,7 @@ dico["mean_energy"] = list(mean)
 dico["std"] = list(std)
 dico["times"] = times
 
-json.dump(dico, open("data/stataverage_12_noisy_8k_depth1.dat", 'w+'))
+json.dump(dico, open("data/stataverage_12_noisy_8k_depth1_NN1.dat", 'w+'))
 
 
 # plt.plot(times, exactGS, linestyle='--', color='black')

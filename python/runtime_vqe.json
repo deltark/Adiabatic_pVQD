@@ -1,0 +1,17 @@
+{
+    "name": "my-vqe-2",
+    "description": "A test VQE runtime program.",
+    "max_execution_time": 300,
+    "version": "1.0",
+    "backend_requirements": {
+        "min_num_qubits": 5
+    },
+    "parameters": [
+        {
+            "name": "iterations",
+            "description": "Number of iterations to run. Each iteration does a VQE step.",
+            "type": "int",
+            "required": true
+        }
+    ]
+}

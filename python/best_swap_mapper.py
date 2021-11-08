@@ -6,28 +6,28 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set_style('darkgrid')
 
-from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit, IBMQBackend
+# from pytket.extensions.qiskit import qiskit_to_tk, tk_to_qiskit, IBMQBackend
 
 provider = IBMQ.enable_account(
     "210d86ba5de279939c25b694d52b9125670e5de499f4daaa632e6068936f3f74ece4503dae344774501af1aded7c068bdc948a6062c1983c41bfeb77a1501dcf")
 
 
-def pytket_run(qc, tk_backend):
-    """Get compling results for a given circuit and Tket backend.
+# def pytket_run(qc, tk_backend):
+#     """Get compling results for a given circuit and Tket backend.
     
-    Parameters:
-        qc (QuantumCircuit): The circuit.
-        tk_backend (TketBackend): A Tket backend instance.
+#     Parameters:
+#         qc (QuantumCircuit): The circuit.
+#         tk_backend (TketBackend): A Tket backend instance.
         
-    Returns:
-        int: Number of CNOT gates in compiled circuit.
-        float: Compilation time.
-    """
-    tk_qc = qiskit_to_tk(qc)
-    st = time.perf_counter()
-    tk_backend.default_compilation_pass(2).apply(tk_qc)
-    ft = time.perf_counter()
-    return tk_to_qiskit(tk_qc).count_ops()['cx'], ft-st
+#     Returns:
+#         int: Number of CNOT gates in compiled circuit.
+#         float: Compilation time.
+#     """
+#     tk_qc = qiskit_to_tk(qc)
+#     st = time.perf_counter()
+#     tk_backend.default_compilation_pass(2).apply(tk_qc)
+#     ft = time.perf_counter()
+#     return tk_to_qiskit(tk_qc).count_ops()['cx'], ft-st
 
 
 def qiskit_run(qc, backend):
