@@ -1,0 +1,96 @@
+{
+    "name": "p-VQD",
+    "description": "Projected variational quantum dynamics algorithm.",
+    "max_execution_time": 28800,
+    "version": "1.0",
+    "backend_requirements": {
+        "min_num_qubits": 5
+    },
+    "parameters": [
+        {
+            "name": "nqubits",
+            "description": "-",
+            "type": "int",
+            "required": false
+        },
+        {
+            "name": "coupling",
+            "description": "-",
+            "type": "float",
+            "required": false
+        },
+        {
+            "name": "field",
+            "description": "-",
+            "type": "float",
+            "required": false
+        },
+        {
+            "name": "tmax",
+            "description": "-",
+            "type": "float",
+            "required": false
+        },
+        {
+            "name": "dt",
+            "description": "-",
+            "type": "float",
+            "required": false
+        },
+        {
+            "name": "threshold",
+            "description": "-",
+            "type": "float",
+            "required": false
+        },
+        {
+            "name": "depth",
+            "description": "-",
+            "type": "int",
+            "required": false
+        },
+        {
+            "name": "NN",
+            "description": "-",
+            "type": "int",
+            "required": false
+        },
+        {
+            "name": "hamiltonian",
+            "description": "-",
+            "type": "list",
+            "required": false
+        },
+        {
+            "name": "shots",
+            "description": "-",
+            "type": "int",
+            "required": false
+        },
+        {
+            "name": "optimizer",
+            "description": "-",
+            "type": "string",
+            "required": false
+        },
+        {
+            "name": "obs",
+            "description": "-",
+            "type": "dict",
+            "required": false
+        },
+        {
+            "name": "iterations",
+            "description": "Max number of optimization steps for each time step.",
+            "type": "int",
+            "required": false
+        }
+    ],
+    "return_values": [
+        {
+            "name": "-",
+            "description": "Dictionary of results.",
+            "type": "dict"
+        }
+    ]
+}

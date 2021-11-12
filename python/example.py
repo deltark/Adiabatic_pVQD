@@ -66,7 +66,7 @@ if __name__ == "__main__":
 	# ex_params = np.zeros(depth*(5*(spins-1) + 5*(spins-2) + spins)) #custom_ansatz t_order=3
 	# ex_params = np.zeros(depth*(5*(spins-1) + spins)) #custom_ansatz t_order=2
 	ex_params = np.zeros(depth*((spins-1) + (spins-2) + spins)) #custom_hweff_ansatz t_order=3
-	wfn = custom_hweff_ansatz(ex_params)
+	# wfn = custom_hweff_ansatz(ex_params)
 
 
 	### Shift
@@ -96,7 +96,7 @@ if __name__ == "__main__":
 	# shots = 400000
 	shots = 8000
 	# shots = 1
-	# backend = Aer.get_backend('statevector_simulator')
+	backend = Aer.get_backend('statevector_simulator')
 	# backend  = Aer.get_backend('qasm_simulator', noise_model=noise_model)
 	instance = QuantumInstance(backend=backend,shots=shots)
 
@@ -126,10 +126,10 @@ if __name__ == "__main__":
 	gradient = 'sgd'
 
 
-	algo = pVQD(H,custom_hweff_ansatz,ex_params,shift,instance,shots,H_tfunc)
+	algo = pVQD(H,custom_hweff_ansatz,depth,ex_params,shift,instance,shots,H_tfunc)
 
 	begin = time.time()
-	algo.run(ths,dt,n_steps, obs_dict = obs,filename= 'data/VQD/single_step_depth1_test_santiago.dat', max_iter = 3, opt = 'sgd', grad = 'separated_param_shift')
+	algo.run(ths,dt,n_steps, obs_dict = obs,filename= 'data/VQD/runtime_error_test.dat', max_iter = 3, opt = 'sgd', grad = 'separated_param_shift')
 	print(time.time()-begin)
 
 

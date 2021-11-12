@@ -113,7 +113,7 @@ def main(backend, user_messenger, **kwargs):
         user_messenger: Used to communicate with the program consumer.
         kwargs: User inputs.
     """
-    iterations = kwargs.pop('maxiter', 10)
+    iterations = kwargs.pop('iterations', 10)
     n_spins = 3
     shots = 100
     nparameters = 2*n_spins

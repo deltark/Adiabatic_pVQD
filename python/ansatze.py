@@ -54,11 +54,11 @@ def hweff_ansatz(p):
 
 #==========================================
 
-def hweff_ansatz_adiab(p):
-	n_spins = 3
+def hweff_ansatz_adiab(n_spins, depth, p):
+	# n_spins = 3
 	count = 0
 	circuit = QuantumCircuit(n_spins)
-	depth = 3
+	# depth = 3
 
 	for i in range(n_spins):
 		circuit.h(i)
@@ -146,11 +146,11 @@ def custom_ansatz(p):
 
 #==========================================
 
-def custom_hweff_ansatz(p):
+def custom_hweff_ansatz(n_spins, depth, p):
 
-	n_spins = 3
+	# n_spins = 3
 	count = 0
-	depth = 1
+	# depth = 1
 	circuit = QuantumCircuit(n_spins)
 	t_order = n_spins
 

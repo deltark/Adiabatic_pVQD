@@ -1,30 +1,374 @@
-from logging import log
+from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister
+# from logging import log
 import numpy as np
-import json
-import functools
-import itertools
-import matplotlib.pyplot as plt
-from scipy   import  linalg as LA
+# import json
+# import functools
+# import itertools
+# import matplotlib.pyplot as plt
+# from scipy   import  linalg as LA
 
 
 
-import qiskit
+# import qiskit
 from qiskit                               import Aer, execute
 from qiskit.quantum_info 			      import Pauli
 from qiskit.aqua                          import QuantumInstance
 from qiskit.aqua.operators 			      import PauliOp, SummedOp, CircuitSampler, StateFn
 from qiskit.circuit                       import ParameterVector
-from qiskit.aqua.operators.evolutions     import Trotter, PauliTrotterEvolution
+from qiskit.aqua.operators.evolutions     import PauliTrotterEvolution
 
-from qiskit.aqua.operators.state_fns      import CircuitStateFn
-from qiskit.aqua.operators.expectations   import PauliExpectation, AerPauliExpectation, MatrixExpectation
-from qiskit.aqua.operators.primitive_ops  import CircuitOp
-from qiskit.aqua.operators                import Z, I
+# from qiskit.aqua.operators.state_fns      import CircuitStateFn
+from qiskit.aqua.operators.expectations   import PauliExpectation
+# from qiskit.aqua.operators.primitive_ops  import CircuitOp
+# from qiskit.aqua.operators                import Z, I
+
+from qiskit.providers.ibmq.runtime import UserMessenger
+
+### pauli_function.py
+from qiskit.quantum_info import Pauli
+from qiskit.aqua.operators import PauliOp, SummedOp
 
 
+def generate_pauli(idx_x, idx_z, n):
+	'''
+	Args:
+		n (integer)
+		idx (list)
+	Returns:
+		tensor product of Pauli operators acting on qubits in idx
+	'''
 
-from pauli_function import *
+	xmask = [0]*n
+	zmask = [0]*n
+	for i in idx_x:
+		xmask[i] = 1
+	for i in idx_z:
+		zmask[i] = 1
 
+	a_x = np.asarray(xmask, dtype=np.bool)
+	a_z = np.asarray(zmask, dtype=np.bool)
+
+	return Pauli(a_z, a_x)
+
+
+def generate_ising_pbc(n_spins, coup, field):
+	'''
+	Args:
+		n_spins (integer)
+		coup    (float)
+		field   (float)
+
+	Returns:
+		Hamiltonian of Ising model with ZZ interaction a X transverse field, pbc
+	'''
+
+	int_list = []
+	field_list = []
+
+	int_list.append(generate_pauli([], [0, n_spins-1], n_spins))
+
+	if(n_spins > 2):
+		for i in range(n_spins-1):
+			int_list.append(generate_pauli([], [i, i+1], n_spins))
+
+	for i in range(n_spins):
+		field_list.append(generate_pauli([i], [], n_spins))
+
+	int_coeff = [coup]*len(int_list)
+	field_coeff = [field]*len(field_list)
+
+	H = PauliOp(int_list[0], int_coeff[0])
+
+	for i in range(1, len(int_list)):
+		H = H + PauliOp(int_list[i], int_coeff[i])
+
+	for i in range(len(field_list)):
+		H = H + PauliOp(field_list[i], field_coeff[i])
+
+	return H
+
+
+def generate_ising(n_spins, coup, field):
+	'''
+	Args:
+		n_spins (integer)
+		coup    (float)
+		field   (float)
+
+	Returns:
+		Hamiltonian of Ising model with ZZ interaction a X transverse field
+	'''
+
+	int_list = []
+	field_list = []
+
+	for i in range(n_spins-1):
+		int_list.append(generate_pauli([], [i, i+1], n_spins))
+
+	for i in range(n_spins):
+		field_list.append(generate_pauli([i], [], n_spins))
+
+	int_coeff = [coup]*len(int_list)
+	field_coeff = [field]*len(field_list)
+
+	H = PauliOp(int_list[0], int_coeff[0])
+
+	for i in range(1, len(int_list)):
+		H = H + PauliOp(int_list[i], int_coeff[i])
+
+	for i in range(len(field_list)):
+		H = H + PauliOp(field_list[i], field_coeff[i])
+
+	return H
+
+
+def generate_ising_Hzz(n_spins, coup):
+
+	int_list = []
+
+	for i in range(n_spins-1):
+		int_list.append(generate_pauli([], [i, i+1], n_spins))
+
+	int_coeff = [coup]*len(int_list)
+
+	H = PauliOp(int_list[0], int_coeff[0])
+
+	for i in range(1, len(int_list)):
+		H = H + PauliOp(int_list[i], int_coeff[i])
+
+	return H
+
+
+def generate_ising_Hx(n_spins, field):
+
+	field_list = []
+
+	for i in range(n_spins):
+		field_list.append(generate_pauli([i], [], n_spins))
+
+	field_coeff = [field]*len(field_list)
+
+	H = PauliOp(field_list[0], field_coeff[0])
+
+	for i in range(1, len(field_list)):
+		H = H + PauliOp(field_list[i], field_coeff[i])
+
+	return H
+
+
+def generate_magnus_2(n_spins, coup, field):
+
+	listYZ = []
+	listZY = []
+
+	for i in range(n_spins-1):
+		listYZ.append(generate_pauli([i], [i, i+1], n_spins))
+		listZY.append(generate_pauli([i+1], [i, i+1], n_spins))
+
+	coeff = [coup*field]*len(listYZ)
+
+	H2 = PauliOp(listYZ[0], coeff[0])
+	H2 += PauliOp(listZY[0], coeff[0])
+
+	for i in range(1, len(listYZ)):
+		H2 += PauliOp(listYZ[i], coeff[i])
+		H2 += PauliOp(listZY[i], coeff[i])
+
+	return H2
+###################################################################
+
+# ansatze.py
+
+## These file will contain all the ansatze used for variational quantum simulation
+
+
+#=========================================
+
+def hweff_ansatz(p):
+	n_spins = 3
+	count = 0
+	circuit = QuantumCircuit(n_spins)
+	depth = 2
+
+	for j in range(depth):
+
+		if(j % 2 == 0):
+			# Rx - Rzz block
+			for i in range(n_spins):
+				circuit.rx(p[count], i)
+				count = count + 1
+
+			circuit.barrier()
+
+			for i in range(n_spins-1):
+				circuit.rzz(p[count], i, i+1)
+				count = count + 1
+
+			circuit.barrier()
+
+		if(j % 2 == 1):
+			for i in range(n_spins):
+				circuit.ry(p[count], i)
+				count = count + 1
+
+			circuit.barrier()
+
+			for i in range(n_spins-1):
+				circuit.rzz(p[count], i, i+1)
+				count = count + 1
+
+			circuit.barrier()
+
+	# Final block to close the ansatz
+	if (depth % 2 == 1):
+		for i in range(n_spins):
+			circuit.ry(p[count], i)
+			count = count + 1
+	if (depth % 2 == 0):
+		for i in range(n_spins):
+			circuit.rx(p[count], i)
+			count = count + 1
+
+	return circuit
+
+#==========================================
+
+
+def hweff_ansatz_adiab(n_spins, depth, p):
+	# n_spins = 3
+	count = 0
+	circuit = QuantumCircuit(n_spins)
+	# depth = 3
+
+	for i in range(n_spins):
+		circuit.h(i)
+
+	for j in range(depth):
+
+		if(j % 2 == 0):
+			# Rzz - Rx block
+			for i in range(n_spins-1):
+				circuit.rzz(p[count], i, i+1)
+				count = count + 1
+
+			circuit.barrier()
+
+			for i in range(n_spins):
+				circuit.rx(p[count], i)
+				count = count + 1
+
+			circuit.barrier()
+
+		if(j % 2 == 1):
+			for i in range(n_spins-1):
+				circuit.rzz(p[count], i, i+1)
+				count = count + 1
+
+			circuit.barrier()
+
+			for i in range(n_spins):
+				circuit.ry(p[count], i)
+				count = count + 1
+
+	return circuit
+
+#==========================================
+
+
+def custom_ansatz(p):
+
+	n_spins = 3
+	count = 0
+	depth = 2
+
+	t_order = 2
+
+	# def c_gate(qubit0,qubit1,p0,p1,p2,p3,p4):
+	# 	circuit.rx(p0,qubit0)
+	# 	circuit.ry(p1,qubit0)
+	#
+	# 	circuit.rx(p2,qubit1)
+	# 	circuit.ry(p3,qubit1)
+	#
+	# 	circuit.rzz(p4,qubit0,qubit1)
+
+	def c_gate(qubit0, qubit1, p0, p1, p2, p3, p4):
+		circuit.ry(p0, qubit0)
+		circuit.rx(p1, qubit0)
+
+		circuit.ry(p2, qubit1)
+		circuit.rx(p3, qubit1)
+
+		circuit.rzz(p4, qubit0, qubit1)
+
+	circuit = QuantumCircuit(n_spins)
+
+	# Prepare initial ground state
+	for i in range(n_spins):
+		circuit.h(i)
+
+	# Making multiple depths
+	for d in range(depth):
+
+		for k in range(1, t_order):
+			for r in range(k+1):
+				for i in range(n_spins):
+					if i % (k+1) == r and i+k < n_spins:
+						c_gate(i, i+k, p[count], p[count+1], p[count+2], p[count+3], p[count+4])
+						count = count+5
+				#circuit.barrier()
+
+		for i in range(n_spins):
+			circuit.ry(p[count], i)
+			count = count + 1
+		#circuit.barrier()
+
+	return circuit
+
+#==========================================
+
+
+def custom_hweff_ansatz(n_spins, depth, p):
+
+	# n_spins = 3
+	count = 0
+	# depth = 1
+	circuit = QuantumCircuit(n_spins)
+	t_order = n_spins
+
+	for i in range(n_spins):
+		circuit.h(i)
+
+	for j in range(depth):
+
+		for k in range(1, t_order):
+			for r in range(k+1):
+				for i in range(n_spins):
+					if i % (k+1) == r and i+k < n_spins:
+						circuit.rzz(p[count], i, i+k)
+						count = count+1
+
+		circuit.barrier()
+
+		if(j % 2 == 0):
+			for i in range(n_spins):
+				circuit.rx(p[count], i)
+				count = count + 1
+
+			circuit.barrier()
+
+		if(j % 2 == 1):
+
+			for i in range(n_spins):
+				circuit.ry(p[count], i)
+				count = count + 1
+
+			circuit.barrier()
+
+	return circuit
+#############################################################################################""
+
+# p-VQD
 
 # This class aims to simulate the dynamics of a quantum system
 # approximating it with a variational ansatz whose parameters
@@ -68,8 +412,11 @@ class pVQD:
 		    of the time-dependent Hamiltonian
 
 		'''
+		# Make the Hamiltonian a list if it's a single one
+		if not isinstance(hamiltonian, list):
+			hamiltonian = [hamiltonian]
 		self.hamiltonian     = hamiltonian
-		self.ansatz_depth    = ansatz_depth
+		self.ansatz_depth 	 = ansatz_depth
 		self.instance        = instance
 		self.parameters      = parameters
 		self.num_parameters  = len(parameters)
@@ -113,11 +460,6 @@ class pVQD:
 		## This function creates the circuit that will be used to evaluate overlap and its gradient
 
 		# First, create the Trotter step
-
-		# Make the Hamiltonian a list if it's a single one
-		if not isinstance(self.hamiltonian, list):
-			self.hamiltonian = [self.hamiltonian]
-
 		if self.ham_tfunc is not None:
 
 			#former method
@@ -130,13 +472,16 @@ class pVQD:
 
 		else:
 			step_h  = time_step*np.array(self.hamiltonian)
+			print(step_h)
 
 		trotter = PauliTrotterEvolution(reps=1)
 		# Total Trotter circuit constructed by summing over the Hamiltonian parts
 		if len(step_h)>1:
-			U_dt    = np.sum([trotter.convert(step_h[j].exp_i()).to_circuit() for j in range(len(step_h))])
+			U_dt = trotter.convert(step_h[0].exp_i()).to_circuit()
+			for j in range(1,len(step_h)):
+				U_dt += trotter.convert(step_h[j].exp_i()).to_circuit()
 		else:
-			U_dt    = trotter.convert(step_h[0].exp_i()).to_circuit()
+			U_dt    = trotter.convert(step_h[0][0].exp_i()).to_circuit()
 
 
 		l_circ  = self.ansatz.assign_parameters({self.params_vec: self.left})
@@ -438,7 +783,7 @@ class pVQD:
 		return new_shift
 
 
-	def run(self,ths,timestep,n_steps,obs_dict={},filename='algo_result.dat',max_iter = 100,opt='sgd',grad='param_shift',initial_point=None):
+	def run(self,ths,timestep,n_steps,user_messenger:UserMessenger,obs_dict={},max_iter = 100,opt='sgd',grad='separated_param_shift',initial_point=None):
 
 
 
@@ -695,4 +1040,65 @@ class pVQD:
 
 		# log_data['overlap_history'] = overlap_history
 
-		json.dump(log_data, open( filename,'w+'))
+		# json.dump(log_data, open( filename,'w+'))
+		return log_data
+
+###############################################################################
+
+#MAIN
+
+def main(backend, user_messenger, **kwargs):
+	"""Main entry point of the program.
+
+    Args:
+        backend: Backend to submit the circuits to.
+        user_messenger: Used to communicate with the program consumer.
+        kwargs: User inputs.
+    """
+
+	#user inputs
+	nqubits = kwargs.pop('nqubits', 3)
+	V       = kwargs.pop('coupling', -1.0)
+	g 		= kwargs.pop('field', -1.0)
+	tmax 	= kwargs.pop('tmax', 3.0)
+	dt 		= kwargs.pop('dt', 0.05)
+	n_steps = int(tmax/dt)
+	ths 	= kwargs.pop('threshold', 0.99999)
+	depth 	= kwargs.pop('depth', 1)
+	NN 		= kwargs.pop('NN', 1) #nearest neighbor
+	HamDict = kwargs.pop('hamiltonian', ['hzz', 'hx'])
+	# ansatz  = kwargs.pop('ansatz', hweff_ansatz_adiab)
+	# H_tfunc_bool = kwargs.pop('h_tfunc', [False for i in range(len(HamDict))])
+	shots 	= kwargs.pop('shots', 8000)
+	opt     = kwargs.pop('optimizer', 'sgd')
+	obs     = kwargs.pop('obs', {'E': generate_ising(nqubits, V, g)})
+	max_iter= kwargs.pop('iterations', 30)
+
+	H = []
+	for label in HamDict:
+		if label == 'hzz':
+			H.append(generate_ising_Hzz(nqubits, V))
+		elif label == 'hx':
+			H.append(generate_ising_Hx(nqubits, g))
+
+	H_tfunc = [lambda x: x/tmax]
+
+	if NN == 1:
+		ansatz = hweff_ansatz_adiab
+		ex_params = np.zeros(depth*nqubits + depth*(nqubits-1))
+	else:
+		ansatz = custom_hweff_ansatz
+		ex_params = np.zeros(depth*((nqubits-1) + (nqubits-2) + nqubits))
+
+	shift = np.zeros(len(ex_params))
+
+	instance = QuantumInstance(backend=backend, shots=shots)
+
+	algo = pVQD(H, ansatz, depth, ex_params,
+	            shift, instance, shots, H_tfunc)
+
+	output = algo.run(ths, dt, n_steps, user_messenger, obs_dict=obs, max_iter=max_iter, opt=opt,
+					 grad='separated_param_shift')
+
+	return output
+

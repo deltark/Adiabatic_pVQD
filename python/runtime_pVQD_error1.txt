@@ -1,0 +1,24 @@
+File "/code/program_starter.py", line 78, in <module>\n2021-11-09T17:28:13.223829224Z     
+    final_result = main(backend, messenger, **user_params)\n2021-11-09T17:28:13.223838191Z   
+    
+File "/code/program.py", line 1098, in main\n2021-11-09T17:28:13.223845716Z     
+    output = algo.run(ths, dt, n_steps, user_messenger, obs_dict=obs, max_iter=max_iter, opt=opt,\n2021-11-09T17:28:13.223854944Z  
+    
+File "/code/program.py", line 797, in run\n2021-11-09T17:28:13.223863104Z     
+    state_wfn = self.construct_total_circuit(timestep)\n2021-11-09T17:28:13.223871219Z  
+    
+File "/code/program.py", line 480, in construct_total_circuit\n2021-11-09T17:28:13.223878575Z     
+    U_dt    = np.sum([trotter.convert(step_h[j].exp_i()).to_circuit() for j in range(len(step_h))])\n2021-11-09T17:28:13.223887022Z   
+    
+File "<__array_function__ internals>", line 5, in sum\n2021-11-09T17:28:13.223894761Z   
+File "/usr/local/lib/python3.8/site-packages/numpy/core/fromnumeric.py", line 2247, in sum\n2021-11-09T17:28:13.223902040Z     
+    return _wrapreduction(a, np.add, \'sum\', axis, dtype, out, keepdims=keepdims,\n2021-11-09T17:28:13.223911760Z   
+    
+File "/usr/local/lib/python3.8/site-packages/numpy/core/fromnumeric.py", line 87, in _wrapreduction\n2021-11-09T17:28:13.223918481Z     
+    return ufunc.reduce(obj, axis, dtype, out, **passkwargs)\n2021-11-09T17:28:13.223927136Z   
+    
+File "/usr/local/lib/python3.8/site-packages/qiskit/circuit/library/standard_gates/rz.py", line 107, in __array__\n2021-11-09T17:28:13.223935951Z     
+    ilam2 = 0.5j * float(self.params[0])\n2021-11-09T17:28:13.223966399Z   
+    
+File "/usr/local/lib/python3.8/site-packages/qiskit/circuit/parameterexpression.py", line 419, in __float__\n2021-11-09T17:28:13.223973484Z     
+    raise TypeError(\n2021-11-09T17:28:13.223980235Z TypeError: ParameterExpression with unbound parameters ({ParameterVectorElement(h[0])}) cannot be cast to a float.\n'
