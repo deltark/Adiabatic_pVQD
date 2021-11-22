@@ -14,8 +14,7 @@ sample_program_json = os.path.join(
     os.getcwd(), "runtime_pVQD.json")
 
 # This will fail if a sample-program already exists.
-program_id = provider.runtime.upload_program(
+provider.runtime.update_program(program_id='p-vqd-xL289veY54',
     data=sample_program_data,
     metadata=sample_program_json
 )
-print(program_id)

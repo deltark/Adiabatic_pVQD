@@ -14,7 +14,7 @@ from qiskit import IBMQ
 
 import runtime_pVQD
 
-from pauli_function import *
+# from pauli_function import *
 
 IBMQ.load_account()
 provider = IBMQ.get_provider(
@@ -24,15 +24,24 @@ provider = IBMQ.get_provider(
 # print(f"Backends that support Qiskit Runtime: {runtime_backends}")
 nqubits = 3
 tmax = 3.0
+NN = 1
+maxiter = 10
 # hzz = generate_ising_Hzz(nqubits, -1.0)
 # hx = generate_ising_Hx(nqubits, -1.0)
 ham = ['hzz', 'hx']
 
 # h_tfunc = [lambda x: x/tmax]
 
+#callback function for interim results
+def interim_result_callback(job_id, interim_result):
+    print(interim_result)
+    filename = ('data/VQD/interim_runtime_'+backend.name() +
+                '_NN'+str(NN)+'_iter'+str(maxiter)+'.dat')
+    json.dump(result, open(filename, 'w+'))
 
-inputs = {"nqubits": nqubits, "iterations": 3, "tmax": tmax, "dt": tmax,
-          "hamiltonian": ham}
+
+inputs = {"nqubits": nqubits, "iterations": maxiter, "tmax": tmax, "dt": tmax,
+          "hamiltonian": ham, "NN": NN}
 
 # backend = Aer.get_backend('qasm_simulator')
 # user_messenger = UserMessenger()
@@ -49,17 +58,18 @@ inputs = {"nqubits": nqubits, "iterations": 3, "tmax": tmax, "dt": tmax,
 
 
 # print("on hardware:")
-backend = provider.get_backend('ibmq_qasm_simulator')
+# backend = provider.get_backend('ibmq_qasm_simulator')
+backend = provider.get_backend('ibmq_bogota')
 # Configure backend options
 options = {'backend_name': backend.name()}
 
 # Execute the circuit using the "circuit-runner" program.
-job = provider.runtime.run(program_id="p-vqd",
+job = provider.runtime.run(program_id="p-vqd-xL289veY54",
                            options=options,
                            inputs=inputs)
 
 # Get runtime job result.
 result = job.result()
 print(result)
-filename = 'data/VQD/runtime_test_qasm.dat'
+filename = ('data/VQD/runtime_'+backend.name()+'_NN'+str(NN)+'_iter'+str(maxiter)+'.dat')
 json.dump(result, open(filename, 'w+'))

@@ -12,21 +12,21 @@ import numpy as np
 # import qiskit
 from qiskit                               import Aer, execute
 from qiskit.quantum_info 			      import Pauli
-from qiskit.aqua                          import QuantumInstance
-from qiskit.aqua.operators 			      import PauliOp, SummedOp, CircuitSampler, StateFn
+from qiskit.utils                         import QuantumInstance
+from qiskit.opflow 			      		  import PauliOp, SummedOp, CircuitSampler, StateFn
 from qiskit.circuit                       import ParameterVector
-from qiskit.aqua.operators.evolutions     import PauliTrotterEvolution
+from qiskit.opflow.evolutions     		  import PauliTrotterEvolution
 
-# from qiskit.aqua.operators.state_fns      import CircuitStateFn
-from qiskit.aqua.operators.expectations   import PauliExpectation
-# from qiskit.aqua.operators.primitive_ops  import CircuitOp
-# from qiskit.aqua.operators                import Z, I
+# from qiskit.opflow.state_fns      import CircuitStateFn
+from qiskit.opflow.expectations   import PauliExpectation
+# from qiskit.opflow.primitive_ops  import CircuitOp
+# from qiskit.opflow                import Z, I
 
 from qiskit.providers.ibmq.runtime import UserMessenger
 
 ### pauli_function.py
 from qiskit.quantum_info import Pauli
-from qiskit.aqua.operators import PauliOp, SummedOp
+from qiskit.opflow import PauliOp, SummedOp
 
 
 def generate_pauli(idx_x, idx_z, n):
@@ -376,13 +376,26 @@ def custom_hweff_ansatz(n_spins, depth, p):
 
 # Useful functions
 
+# def projector_zero(n_qubits):
+# 	from qiskit.opflow            import Z, I
+
+# 	prj = (1/np.power(2,n_qubits))*(I+Z)
+
+# 	for a in range(n_qubits-1):
+# 		prj = prj^(I+Z)
+
+# 	return prj
+
+
 def projector_zero(n_qubits):
-	from qiskit.aqua.operators            import Z, I
+	# This function create the global projector |00...0><00...0|
+	from qiskit.opflow import Z, I
 
-	prj = (1/np.power(2,n_qubits))*(I+Z)
+	prj_list = [0.5*(I+Z) for i in range(n_qubits)]
+	prj = prj_list[0]
 
-	for a in range(n_qubits-1):
-		prj = prj^(I+Z)
+	for a in range(1, len(prj_list)):
+		prj = prj ^ prj_list[a]
 
 	return prj
 
@@ -528,13 +541,13 @@ class pVQD:
 		for values in values_dict:
 			sampled_op = sampler.convert(state_wfn,params=values)
 
-			mean  = sampled_op.eval()[0].real
+			mean  = sampled_op.eval().real
 			#mean  = np.power(np.absolute(mean),2)
 			est_err = 0
 
 
 			if (not self.instance.is_statevector):
-				variance = expectator.compute_variance(sampled_op)[0].real
+				variance = expectator.compute_variance(sampled_op).real
 				est_err  = np.sqrt(variance/self.shots)
 				self.njobs += 1
 
@@ -582,12 +595,12 @@ class pVQD:
 		for values in values_dict:
 			sampled_op = sampler.convert(state_wfn, params=values)
 
-			mean = sampled_op.eval()[0].real
+			mean = sampled_op.eval().real
 			#mean  = np.power(np.absolute(mean),2)
 			est_err = 0
 
 			if (not self.instance.is_statevector):
-				variance = expectator.compute_variance(sampled_op)[0].real
+				variance = expectator.compute_variance(sampled_op).real
 				est_err = np.sqrt(variance/self.shots)
 				self.njobs += 1
 
@@ -634,12 +647,12 @@ class pVQD:
 		for values in values_dict:
 			sampled_op = sampler.convert(state_wfn, params=values)
 
-			mean = sampled_op.eval()[0].real
+			mean = sampled_op.eval().real
 			#mean  = np.power(np.absolute(mean),2)
 			est_err = 0
 
 			# if (not self.instance.is_statevector):
-			# 	variance = expectator.compute_variance(sampled_op)[0].real
+			# 	variance = expectator.compute_variance(sampled_op).real
 			# 	est_err = np.sqrt(variance/self.shots)
 
 			results.append([mean, est_err])
@@ -701,13 +714,13 @@ class pVQD:
 		for values in values_dict:
 			sampled_op = sampler.convert(state_wfn,params=values)
 
-			mean  = sampled_op.eval()[0]
+			mean  = sampled_op.eval()
 			mean  = np.power(np.absolute(mean),2)
 			est_err = 0
 
 
 			if (not self.instance.is_statevector):
-				variance = expectator.compute_variance(sampled_op)[0].real
+				variance = expectator.compute_variance(sampled_op).real
 				est_err  = np.sqrt(variance/self.shots)
 				self.njobs += 1
 
@@ -750,11 +763,11 @@ class pVQD:
 		grouped    = expectator.convert(braket)
 		sampled_op = sampler.convert(grouped,params = values_obs)
 
-		mean_value = sampled_op.eval()[0].real
+		mean_value = sampled_op.eval().real
 		est_err = 0
 
 		if (not self.instance.is_statevector):
-			variance = expectator.compute_variance(sampled_op)[0].real
+			variance = expectator.compute_variance(sampled_op).real
 			est_err  = np.sqrt(variance/self.shots)
 
 		res = [mean_value,est_err]
