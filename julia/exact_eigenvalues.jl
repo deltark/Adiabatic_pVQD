@@ -40,7 +40,7 @@ ground_energy(matrix) = findmin(eigen(matrix).values)
 ##
 
 ## Sys data
-n_spins   = 7
+n_spins   = 20
 dt        = 0.05
 tmax      = 1.0
 n_dt      = tmax/dt

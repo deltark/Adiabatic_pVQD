@@ -16,20 +16,35 @@ exactGS = np.load('data/exactGS.npy')
 # svVQD = json.load(open('data/VQD/T3_dt05_sv.dat'))
 # times = svVQD["times"]
 
-onestep = json.load(open('data/VQD/runtime_test_ibmq_bogota.dat'))
+onestep = json.load(open('data/VQD/runtime_ibm_lagos_NN1_iter30_shots2000.dat'))
 optsteps = onestep["iter_number"][0]
 fidelities = onestep["interm_F"][0]
+loss = [1-f for f in fidelities]
 shifts = onestep["shifts"][0]
 shifts = [list(x) for x in zip(*shifts)]
 grads = onestep["gradients"][0]
 grads = [list(x) for x in zip(*grads)]
+err_grad = onestep["err_grad"][0]
+err_grad = [list(x) for x in zip(*err_grad)]
 norm_grad = onestep["norm_grad"][0]
 njobs = onestep["njobs"]
 # print(njobs[0])
+# print(grads)
+# print(err_grad)
 
-plt.plot(range(optsteps), norm_grad)
-for i in range(len(ex_params)):
-    plt.plot(range(optsteps), grads[i])
+# plt.plot(range(optsteps), norm_grad)
+# for i in range(len(ex_params)):
+#     plt.errorbar(range(optsteps), grads[i], yerr=err_grad[i], capsize=2)
+# plt.xlabel("opt step")
+# plt.ylabel("gradient")
+# plt.tight_layout()
+# plt.show()
+
+plt.semilogy(range(optsteps), loss, 'o')
+plt.xlabel("opt step")
+plt.ylabel("loss")
+# plt.grid(True)
+plt.tight_layout()
 plt.show()
 
 # noisesims = [json.load(open('data/VQD/noisy_shots8k_depth1_NN1_run'+str(i)+'.dat'))['E(t)'] for i in range(1,13)]

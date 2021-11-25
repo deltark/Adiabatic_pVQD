@@ -1,6 +1,7 @@
 from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister
 # from logging import log
 import numpy as np
+import time
 # import json
 # import functools
 # import itertools
@@ -980,6 +981,8 @@ class pVQD:
 				err_grad_t.append(list(self.gradient[:, 1]))
 				grad_norms_t.append(g_norm)
 
+				user_messenger.publish({"grad_t": grad_t, "err_grad_t": err_grad_t, "t_step": i+1})
+
 
 			# Update parameters
 
@@ -1110,8 +1113,11 @@ def main(backend, user_messenger, **kwargs):
 	algo = pVQD(H, ansatz, depth, ex_params,
 	            shift, instance, shots, H_tfunc)
 
+	begin = time.time()
 	output = algo.run(ths, dt, n_steps, user_messenger, obs_dict=obs, max_iter=max_iter, opt=opt,
 					 grad='separated_param_shift')
+	end = time.time() - begin
+	output["exec_time"] = end
 
 	return output
 
