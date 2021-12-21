@@ -1,6 +1,7 @@
 [deps]
 BitBasis = "50ba71b6-fa0f-514d-ae9a-0916efc90dcf"
 Cairo = "159f3aea-2a34-519c-b102-8c37f9878175"
+ColorSchemes = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
 Compose = "a81c6b42-2e10-5240-aca2-a61377ecd94b"
 JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 KrylovKit = "0b1a1467-8014-51b9-945f-bf0ae24f4b77"

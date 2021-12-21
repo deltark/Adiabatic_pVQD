@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 
 from qiskit.quantum_info 			  import Pauli
-from qiskit.aqua.operators 			  import PauliOp, SummedOp
+from qiskit.opflow 			 		  import PauliSumOp, SummedOp, PauliSumOp
 
 def generate_pauli(idx_x,idx_z,n):
 	'''
@@ -51,13 +51,13 @@ def generate_ising_pbc(n_spins,coup,field):
 	int_coeff = [coup]*len(int_list)
 	field_coeff = [field]*len(field_list)
 
-	H = PauliOp(int_list[0],int_coeff[0])
+	H = PauliSumOp(int_list[0],int_coeff[0])
 
 	for i in range(1,len(int_list)):
-		H = H + PauliOp(int_list[i],int_coeff[i])
+		H = H + PauliSumOp(int_list[i],int_coeff[i])
 
 	for i in range(len(field_list)):
-		H = H + PauliOp(field_list[i],field_coeff[i])
+		H = H + PauliSumOp(field_list[i],field_coeff[i])
 
 	return H
 
@@ -86,13 +86,13 @@ def generate_ising(n_spins,coup,field):
 	int_coeff = [coup]*len(int_list)
 	field_coeff = [field]*len(field_list)
 
-	H = PauliOp(int_list[0],int_coeff[0])
+	H = PauliSumOp(int_list[0],int_coeff[0])
 
 	for i in range(1,len(int_list)):
-		H = H + PauliOp(int_list[i],int_coeff[i])
+		H = H + PauliSumOp(int_list[i],int_coeff[i])
 
 	for i in range(len(field_list)):
-		H = H + PauliOp(field_list[i],field_coeff[i])
+		H = H + PauliSumOp(field_list[i],field_coeff[i])
 
 	return H
 
@@ -105,10 +105,10 @@ def generate_ising_Hzz(n_spins, coup):
 
 	int_coeff = [coup]*len(int_list)
 
-	H = PauliOp(int_list[0],int_coeff[0])
+	H = PauliSumOp(int_list[0],int_coeff[0])
 
 	for i in range(1,len(int_list)):
-		H = H + PauliOp(int_list[i],int_coeff[i])
+		H = H + PauliSumOp(int_list[i],int_coeff[i])
 
 	return H
 
@@ -121,10 +121,10 @@ def generate_ising_Hx(n_spins, field):
 
 	field_coeff = [field]*len(field_list)
 
-	H = PauliOp(field_list[0],field_coeff[0])
+	H = PauliSumOp(field_list[0],field_coeff[0])
 
 	for i in range(1, len(field_list)):
-		H = H + PauliOp(field_list[i],field_coeff[i])
+		H = H + PauliSumOp(field_list[i],field_coeff[i])
 
 	return H
 
@@ -139,11 +139,11 @@ def generate_magnus_2(n_spins, coup, field):
 
 	coeff = [coup*field]*len(listYZ)
 
-	H2 = PauliOp(listYZ[0],coeff[0])
-	H2 += PauliOp(listZY[0],coeff[0])
+	H2 = PauliSumOp(listYZ[0],coeff[0])
+	H2 += PauliSumOp(listZY[0],coeff[0])
 
 	for i in range(1,len(listYZ)):
-		H2 += PauliOp(listYZ[i],coeff[i])
-		H2 += PauliOp(listZY[i],coeff[i])
+		H2 += PauliSumOp(listYZ[i],coeff[i])
+		H2 += PauliSumOp(listZY[i],coeff[i])
 
 	return H2
