@@ -41,11 +41,11 @@ if __name__ == "__main__":
 	spins   = 3
 	V       = -1.0
 	g       = -1.0
-	# dt      = 0.05
+	dt      = 0.05
 	tmax    = 3.0
-	# n_steps = int(tmax/dt)
-	n_steps = 1
-	dt = tmax/n_steps
+	n_steps = int(tmax/dt)
+	# n_steps = 1
+	# dt = tmax/n_steps
 
 	# Compute the exact ground state of the Hamiltonian
 	# Heig = hamiltonian_eig(spins, V, g)

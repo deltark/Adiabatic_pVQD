@@ -201,7 +201,7 @@ class pVQD:
 		inputs["obs_wfn"] = obs_wfn
 		inputs["parameters"] = self.parameters
 		inputs["shift"] = self.shift
-		inputs['obs_params'] = self.obs_params
+		# inputs['obs_params'] = self.obs_params
 		inputs['obs_dict'] = obs_dict
 		inputs['max_iter'] = max_iter
 		inputs['shots'] = self.shots
@@ -224,8 +224,8 @@ class pVQD:
 			obs_error   = {}
 
 			for (obs_name,obs_pauli) in obs_dict.items():
-				obs_measure[str(obs_name)].append(runtime_res["obs_measure"][str(obs_name)])
-				obs_error['err_'+str(obs_name)].append(runtime_res["obs_measure"]['err_'+str(obs_name)])
+				obs_measure[str(obs_name)] = [runtime_res["obs_measure"][str(obs_name)]]
+				obs_error['err_'+str(obs_name)] = [runtime_res["obs_error"]['err_'+str(obs_name)]]
 
 
 		counter = []
@@ -300,7 +300,7 @@ class pVQD:
 
 				for (obs_name,obs_pauli) in obs_dict.items():
 					obs_measure[str(obs_name)].append(runtime_res["obs_measure"][str(obs_name)])
-					obs_error['err_'+str(obs_name)].append(runtime_res["obs_measure"]['err_'+str(obs_name)])
+					obs_error['err_'+str(obs_name)].append(runtime_res["obs_error"]['err_'+str(obs_name)])
 
 			counter.append(count)
 			fidelities.append(self.overlap[0])

@@ -25,16 +25,16 @@ def ei(i, n):
 	return vi[:]
 
 
-def compute_gradient(state_wfn, parameters, shift, expectator, sampler, right, left, shots):
+def compute_gradient(state_wfn, parameters, shift, expectator, sampler, right_left, shots):
 
 	nparameters = len(parameters)
 
 	values_dict = []
 	# Then the values for the gradient
 	for i in range(nparameters):
-		values_dict.append(dict(zip(right[:] + left[:], parameters.tolist() + (
+		values_dict.append(dict(zip(right_left, parameters.tolist() + (
 			parameters + shift + ei(i, nparameters)*np.pi/2.0).tolist())))
-		values_dict.append(dict(zip(right[:] + left[:], parameters.tolist() + (
+		values_dict.append(dict(zip(right_left, parameters.tolist() + (
 			parameters + shift - ei(i, nparameters)*np.pi/2.0).tolist())))
 
 	# Now evaluate the circuits with the parameters assigned
@@ -63,13 +63,13 @@ def compute_gradient(state_wfn, parameters, shift, expectator, sampler, right, l
 
 	return g
 
-def compute_overlap(state_wfn, parameters, shift, sampler, right, left):
+def compute_overlap(state_wfn, parameters, shift, sampler, right_left):
 
 	# build dictionary of parameters to values
 	# {left[0]: parameters[0], .. ., right[0]: parameters[0] + shift[0], ...}
 
 	# First create the dictionary for overlap
-	values_dict = [dict(zip(right[:] + left[:],
+	values_dict = [dict(zip(right_left,
 						parameters.tolist() + (parameters + shift).tolist()))]
 
 	# Now evaluate the circuits with the parameters assigned
@@ -129,13 +129,15 @@ def main(backend, user_messenger, **kwargs):
 	parameters  = kwargs.pop('parameters')
 	shift       = kwargs.pop('shift')
 	# params_vec  = kwargs.pop('params_vec')
-	obs_params  = kwargs.pop('obs_params')
+	obs_params  = obs_wfn.parameters
 	# hamiltonian = kwargs.pop('hamiltonian')
 	obs_dict    = kwargs.pop('obs_dict', {})
 	max_iter    = kwargs.pop('max_iter', 50)
 	shots       = kwargs.pop('shots', 2000)
 
 	first_measure = kwargs.pop('first_measure', False)
+
+	right_left = state_wfn.parameters
 
 
 	instance = QuantumInstance(backend=backend, shots=shots)
@@ -151,6 +153,8 @@ def main(backend, user_messenger, **kwargs):
 
 	#######
 	#START
+	result = {}
+
 	count = 0
 	overlap = [0.01, 0]
 	# g_norm = 1
@@ -170,14 +174,14 @@ def main(backend, user_messenger, **kwargs):
 			overlap_instance = QuantumInstance(backend=overlap_backend, shots=1)
 			overlap_sampler = CircuitSampler(overlap_instance)
 			E = compute_overlap(
-				state_wfn, parameters, shift, overlap_sampler)
+				state_wfn, parameters, shift, overlap_sampler, right_left)
 			g = compute_gradient(
-				state_wfn, parameters, shift, expectation, sampler)
+				state_wfn, parameters, shift, expectation, sampler, right_left, shots)
 
 			overlap = E
 			gradient = g
 
-			tot_steps = tot_steps+1
+			# tot_steps = tot_steps+1
 
 			# if count == 1:
 			# 	initial_fidelities.append(self.overlap[0])
@@ -207,13 +211,19 @@ def main(backend, user_messenger, **kwargs):
 		# Update parameters
 		parameters = parameters + shift
 
+		result["new_params"] = parameters
+		result["shift"] = shift
+		result["overlap"] = overlap
+		result["gradient"] = gradient
+		result["count"] = count
 
-	print('\n---------------------------------- \n')
 
-	print("Shift after optimizing:",shift)
-	print("New parameters:"        ,parameters)
+		print('\n---------------------------------- \n')
 
-	print("New overlap: "          ,overlap[0])
+		print("Shift after optimizing:",shift)
+		print("New parameters:"        ,parameters)
+
+		print("New overlap: "          ,overlap[0])
 
 
 	#Measure observables
@@ -229,13 +239,8 @@ def main(backend, user_messenger, **kwargs):
 			obs_error['err_'+str(obs_name)] = run_measure[1]
 
 	#save and return results
-	result = {}
-	result["new_params"]  = parameters
-	result["shift"]       = shift
-	result["overlap"]     = overlap
-	result["gradient"]    = gradient
+
 	result["obs_measure"] = obs_measure
 	result["obs_error"]   = obs_error
-	result["count"]       = count
 
 	return result
