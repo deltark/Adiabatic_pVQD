@@ -31,8 +31,9 @@ provider = IBMQ.get_provider(
 # print(f"Backends that support Qiskit Runtime: {runtime_backends}")
 nqubits = 3
 tmax = 3.0
+dt = 0.06
 NN = 1
-maxiter = 10
+maxiter = 30
 shots = 2000
 # hzz = generate_ising_Hzz(nqubits, -1.0)
 # hx = generate_ising_Hx(nqubits, -1.0)
@@ -50,8 +51,8 @@ def interim_result_callback(job_id, interim_result):
 
 
 #pvqd inputs
-# inputs = {"nqubits": nqubits, "iterations": maxiter, "tmax": tmax, "dt": tmax,
-        #   "hamiltonian": ham, "NN": NN, "shots": shots}
+inputs = {"nqubits": nqubits, "iterations": maxiter, "tmax": tmax, "dt": dt,
+          "hamiltonian": ham, "NN": NN, "shots": shots}
 
 #vqe inputs?
 # def dumb_ansatz(n_spins, p):
@@ -60,11 +61,11 @@ def interim_result_callback(job_id, interim_result):
 #         circuit.rx(p[0], i)
 #     return circuit
 
-params = ParameterVector('p', 12)
-ansatz = EfficientSU2(nqubits, reps=1)
-ham = (Z ^ Z ^ I) + (I ^ Z ^ Z) + (I ^ X ^ I) + (X ^ I ^ I) + (I ^ I ^ X)
-optimizer = {'name': 'QN-SPSA', 'maxiter': maxiter}
-inputs = {"ansatz": ansatz, "operator": ham, "optimizer": optimizer, "measurement_error_mitigation": True}
+# params = ParameterVector('p', 12)
+# ansatz = EfficientSU2(nqubits, reps=1)
+# ham = (Z ^ Z ^ I) + (I ^ Z ^ Z) + (I ^ X ^ I) + (X ^ I ^ I) + (I ^ I ^ X)
+# optimizer = {'name': 'QN-SPSA', 'maxiter': maxiter}
+# inputs = {"ansatz": ansatz, "operator": ham, "optimizer": optimizer, "measurement_error_mitigation": True}
 
 # backend = Aer.get_backend('qasm_simulator')
 user_messenger = UserMessenger()
@@ -81,13 +82,13 @@ user_messenger = UserMessenger()
 
 
 # print("on hardware:")
-backend = provider.get_backend('ibmq_qasm_simulator')
-# backend = provider.get_backend('ibmq_manila')
+# backend = provider.get_backend('ibmq_qasm_simulator')
+backend = provider.get_backend('ibmq_manila')
 # backend = provider.get_backend('ibm_lagos')
 # Configure backend options
 options = {'backend_name': backend.name()}
-# program_id = "p-vqd-xL289veY54"
-program_id = "vqe"
+program_id = "p-vqd-xL289veY54"
+# program_id = "vqe"
 
 # Execute the circuit using the "circuit-runner" program.
 # tic = time.time()
@@ -111,7 +112,7 @@ result = job.result()
 print(result)
 # filename = ('data/test_vqe_lagos_QN-SPSA.dat')
 # filename = ('data/VQD/runtime_'+backend.name()+'_NN'+str(NN)+'_iter'+str(maxiter)+'_shots'+str(shots)+'.dat')
-filename = ('data/VQD/runtimeVQE_'+backend.name()+'.dat')
+filename = ('data/VQD/runtimepVQD_full_'+backend.name()+'.dat')
 json.dump(result, open(filename, 'w+'))
 
 

@@ -40,11 +40,11 @@ def exact(final_time, dt, hamiltonian, observable, initial_state):
 
     return ts, energies, obs
 
-time = 2
-dt = 0.05
+time = 3
+dt = 0.06
 
 def timedep_ham(t):
-    return -t/time * (Z ^ Z) - (I ^ X) - (X ^ I)
+    return -t/time * ((Z ^ Z ^ I) + (I ^ Z ^ Z)) - ((I ^ X ^ I) + (X ^ I ^ I) + (I ^ I ^ X))
 
 IBMQ.load_account()
 provider = IBMQ.get_provider(
@@ -54,11 +54,15 @@ backend = provider.get_backend('ibmq_qasm_simulator')
 # backend = provider.get_backend('ibmq_manila')
 expectation = MatrixExpectation()
 hamiltonian = timedep_ham
-observable = Z ^ Z
+observable = Z ^ Z ^ I
+
+spins = 3
+depth = 1
 
 # ansatz = EfficientSU2(2, reps=1)
-params = ParameterVector('p', 3)
-ansatz = hweff_ansatz_adiab(2, 1, params)
+num_params = depth*spins + depth*(spins-1)
+params = ParameterVector('p', num_params)
+ansatz = hweff_ansatz_adiab(spins, depth, params)
 # optimizer = SPSA(maxiter=300, learning_rate=0.1, perturbation=0.01)
 optimizer = {'name': 'QN-SPSA', 'maxiter': 20}
 # optimizer = SPSA()

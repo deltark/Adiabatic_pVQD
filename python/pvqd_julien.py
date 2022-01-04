@@ -116,7 +116,7 @@ class PVQD:
 
         inputs = {"ansatz": overlap_state, "operator": operator,
                   "optimizer": self.optimizer, "measurement_error_mitigation": True,
-                  "initial_parameters": initial_guess}
+                  "initial_parameters": initial_guess, "shots": 2000}
 
         user_messenger = UserMessenger()
         def interim_result_callback(job_id, interim_result):
