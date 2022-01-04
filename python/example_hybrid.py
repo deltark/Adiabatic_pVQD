@@ -96,9 +96,9 @@ if __name__ == "__main__":
 	# shots = 400000
 	shots = 8000
 	# shots = 1
-	backend = Aer.get_backend('statevector_simulator')
+	backend = Aer.get_backend('qasm_simulator')
 	# backend  = Aer.get_backend('qasm_simulator', noise_model=noise_model)
-	instance = QuantumInstance(backend=backend,shots=shots)
+	# instance = QuantumInstance(backend=backend,shots=shots)
 
 	### Prepare the observables to measure
 	obs = {}
@@ -126,10 +126,10 @@ if __name__ == "__main__":
 	gradient = 'sgd'
 
 
-	algo = pVQD(H,hweff_ansatz_adiab,depth,ex_params,shift,instance,shots,H_tfunc)
+	algo = pVQD(H,hweff_ansatz_adiab,depth,ex_params,shift,backend,shots,H_tfunc)
 
 	begin = time.time()
-	algo.run(ths,dt,n_steps, obs_dict = obs,filename= 'data/VQD/hybrid_test.dat', max_iter = 3)
+	algo.run(ths,dt,n_steps, obs_dict = obs,filename= 'data/VQD/hybrid_test.dat', max_iter = 30)
 	print("Total time : ", time.time()-begin)
 
 

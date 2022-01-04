@@ -48,7 +48,7 @@ def projector_zero(n_qubits):
 
 class pVQD:
 
-	def __init__(self,hamiltonian,ansatz,ansatz_depth,parameters,initial_shift,instance,shots,ham_tfunc=None,ham_integ=None,ham_mag2=None):
+	def __init__(self,hamiltonian,ansatz,ansatz_depth,parameters,initial_shift,backend,shots,ham_tfunc=None,ham_integ=None,ham_mag2=None):
 
 		'''
 		Args:
@@ -67,7 +67,7 @@ class pVQD:
 		'''
 		self.hamiltonian     = hamiltonian
 		self.ansatz_depth    = ansatz_depth
-		self.instance        = instance
+		self.backend         = backend
 		self.parameters      = parameters
 		self.num_parameters  = len(parameters)
 		self.shift           = initial_shift
@@ -142,7 +142,7 @@ class pVQD:
 			self.hamiltonian[0].num_qubits), is_measurement=True)
 		state_wfn = zero_prj @ StateFn(r_circ + U_dt + l_circ.inverse())
 
-		return state_wfn
+		return state_wfn, r_circ, l_circ
 
 	def construct_hamiltonian(self):
 		## This function creates the circuit that will be used to measure the time-dependent energy observable
@@ -157,7 +157,7 @@ class pVQD:
 
 
 		## Now prepare the state in order to compute the overlap and its gradient
-		state_wfn = self.construct_total_circuit(timestep)
+		state_wfn, r_circ, l_circ = self.construct_total_circuit(timestep)
 
 		## Also the standard state for measuring the observables
 		obs_wfn   = self.ansatz.assign_parameters({self.params_vec: self.obs_params})
@@ -195,25 +195,29 @@ class pVQD:
 		print("Running the algorithm")
 
 		#It's runtime
+		options = {'backend_name': self.backend.name()}
+
 		inputs = {}
 		inputs["threshold"] = ths
 		inputs["state_wfn"] = state_wfn
 		inputs["obs_wfn"] = obs_wfn
 		inputs["parameters"] = self.parameters
 		inputs["shift"] = self.shift
-		# inputs['obs_params'] = self.obs_params
+		# inputs['obs_params'] = self.obs_params.params
 		inputs['obs_dict'] = obs_dict
 		inputs['max_iter'] = max_iter
 		inputs['shots'] = self.shots
+		inputs['r_circ'] = r_circ
+		inputs['l_circ'] = l_circ
 
 		inputs['first_measure'] = True
 
-		backend = Aer.get_backend('qasm_simulator')
+		# backend = Aer.get_backend('qasm_simulator')
 		user_messenger = UserMessenger()
 		serialized_inputs = json.dumps(inputs, cls=RuntimeEncoder)
 		deserialized_inputs = json.loads(serialized_inputs, cls=RuntimeDecoder)
 		runtime_res = runtime_pVQD_step.main(
-                    backend, user_messenger, **deserialized_inputs)
+                    self.backend, user_messenger, **deserialized_inputs)
 
 		inputs['first_measure'] = False
 
@@ -284,7 +288,7 @@ class pVQD:
 
 			serialized_inputs = json.dumps(inputs, cls=RuntimeEncoder)
 			deserialized_inputs = json.loads(serialized_inputs, cls=RuntimeDecoder)
-			runtime_res = runtime_pVQD_step.main(backend, user_messenger, **deserialized_inputs)
+			runtime_res = runtime_pVQD_step.main(self.backend, user_messenger, **deserialized_inputs)
 
 			self.parameters = runtime_res["new_params"]
 			self.shift      = runtime_res["shift"]
