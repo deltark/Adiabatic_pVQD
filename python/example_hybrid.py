@@ -96,7 +96,14 @@ if __name__ == "__main__":
 	# shots = 400000
 	shots = 8000
 	# shots = 1
-	backend = Aer.get_backend('qasm_simulator')
+
+	IBMQ.load_account()
+	provider = IBMQ.get_provider(
+		hub='ibm-q-research-2', group='epfl-2', project='main')
+	# backend = provider.get_backend('ibmq_qasm_simulator')
+	backend = provider.get_backend('ibm_lagos')
+
+	# backend = Aer.get_backend('qasm_simulator')
 	# backend  = Aer.get_backend('qasm_simulator', noise_model=noise_model)
 	# instance = QuantumInstance(backend=backend,shots=shots)
 
@@ -126,10 +133,10 @@ if __name__ == "__main__":
 	gradient = 'sgd'
 
 
-	algo = pVQD(H,hweff_ansatz_adiab,depth,ex_params,shift,backend,shots,H_tfunc)
+	algo = pVQD(H,hweff_ansatz_adiab,depth,ex_params,shift,provider,backend,shots,H_tfunc)
 
 	begin = time.time()
-	algo.run(ths,dt,n_steps, obs_dict = obs,filename= 'data/VQD/hybrid_test.dat', max_iter = 30)
+	algo.run(ths,dt,n_steps, obs_dict = obs,filename= 'data/VQD/hybrid_test_casablanca.dat', max_iter = 30)
 	print("Total time : ", time.time()-begin)
 
 

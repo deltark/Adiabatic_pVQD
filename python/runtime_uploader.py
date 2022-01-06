@@ -8,13 +8,17 @@ provider = IBMQ.get_provider(
 
 # provider.runtime.delete_program('my-vqe-2')
 
-sample_program_data = os.path.join(
-    os.getcwd(), "runtime_pVQD.py")
-sample_program_json = os.path.join(
-    os.getcwd(), "runtime_pVQD.json")
+program_data = os.path.join(
+    os.getcwd(), "runtime_pVQD_step.py")
+program_json = os.path.join(
+    os.getcwd(), "runtime_pVQD_step.json")
 
-# This will fail if a sample-program already exists.
-provider.runtime.update_program(program_id='p-vqd-xL289veY54',
-    data=sample_program_data,
-    metadata=sample_program_json
+provider.runtime.update_program(program_id='pvqd-step-VRoB5bxpDy',
+    data=program_data,
+    metadata=program_json
 )
+
+# program_id = provider.runtime.upload_program(
+#     data=program_data,
+#     metadata=program_json
+# )

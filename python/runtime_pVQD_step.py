@@ -233,6 +233,10 @@ def main(backend, user_messenger, **kwargs):
 
 		print("New overlap: "          ,overlap[0])
 
+		user_messenger.publish(
+			{"shift" : shift, "parameters": parameters, "overlap": overlap[0]}
+		)
+
 
 	#Measure observables
 	if len(obs_dict) > 0:

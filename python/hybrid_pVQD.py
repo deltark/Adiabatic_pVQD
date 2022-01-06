@@ -1,10 +1,6 @@
-from logging import log
 import numpy as np
 import json
-import matplotlib.pyplot as plt
-from scipy   import  linalg as LA
-
-
+import time
 
 from qiskit                               import Aer, execute
 from qiskit.quantum_info 			      import Pauli
@@ -13,13 +9,10 @@ from qiskit.opflow 			              import PauliOp, SummedOp, CircuitSampler, St
 from qiskit.circuit                       import ParameterVector
 from qiskit.opflow.evolutions             import Trotter, PauliTrotterEvolution
 
-from qiskit.opflow.state_fns      import CircuitStateFn
-from qiskit.opflow.expectations   import PauliExpectation, AerPauliExpectation, MatrixExpectation
-from qiskit.opflow.primitive_ops  import CircuitOp
-from qiskit.opflow                import Z, I
-
 from qiskit.providers.ibmq.runtime       import UserMessenger
 from qiskit.providers.ibmq.runtime.utils import RuntimeEncoder, RuntimeDecoder
+
+from qiskit import IBMQ
 
 from pauli_function import *
 
@@ -48,7 +41,7 @@ def projector_zero(n_qubits):
 
 class pVQD:
 
-	def __init__(self,hamiltonian,ansatz,ansatz_depth,parameters,initial_shift,backend,shots,ham_tfunc=None,ham_integ=None,ham_mag2=None):
+	def __init__(self,hamiltonian,ansatz,ansatz_depth,parameters,initial_shift,provider,backend,shots,ham_tfunc=None,ham_integ=None,ham_mag2=None):
 
 		'''
 		Args:
@@ -67,6 +60,7 @@ class pVQD:
 		'''
 		self.hamiltonian     = hamiltonian
 		self.ansatz_depth    = ansatz_depth
+		self.provider        = provider
 		self.backend         = backend
 		self.parameters      = parameters
 		self.num_parameters  = len(parameters)
@@ -195,7 +189,12 @@ class pVQD:
 		print("Running the algorithm")
 
 		#It's runtime
+		program_id = "pvqd-step-VRoB5bxpDy"
 		options = {'backend_name': self.backend.name()}
+
+		def interim_result_callback(job_id, interim_result):
+			print("callback time: ", time.localtime(time.time()))
+			print(interim_result)
 
 		inputs = {}
 		inputs["threshold"] = ths
@@ -213,11 +212,17 @@ class pVQD:
 		inputs['first_measure'] = True
 
 		# backend = Aer.get_backend('qasm_simulator')
-		user_messenger = UserMessenger()
-		serialized_inputs = json.dumps(inputs, cls=RuntimeEncoder)
-		deserialized_inputs = json.loads(serialized_inputs, cls=RuntimeDecoder)
-		runtime_res = runtime_pVQD_step.main(
-                    self.backend, user_messenger, **deserialized_inputs)
+		# user_messenger = UserMessenger()
+		# serialized_inputs = json.dumps(inputs, cls=RuntimeEncoder)
+		# deserialized_inputs = json.loads(serialized_inputs, cls=RuntimeDecoder)
+		# runtime_res = runtime_pVQD_step.main(
+        #             self.backend, user_messenger, **deserialized_inputs)
+
+		job = self.provider.runtime.run(program_id=program_id,
+                             options=options,
+                             inputs=inputs,
+                             callback=interim_result_callback)
+		runtime_res = job.result()
 
 		inputs['first_measure'] = False
 
@@ -286,9 +291,15 @@ class pVQD:
 			inputs["shift"]      = self.shift
 			inputs['obs_dict']   = obs_dict
 
-			serialized_inputs = json.dumps(inputs, cls=RuntimeEncoder)
-			deserialized_inputs = json.loads(serialized_inputs, cls=RuntimeDecoder)
-			runtime_res = runtime_pVQD_step.main(self.backend, user_messenger, **deserialized_inputs)
+			# serialized_inputs = json.dumps(inputs, cls=RuntimeEncoder)
+			# deserialized_inputs = json.loads(serialized_inputs, cls=RuntimeDecoder)
+			# runtime_res = runtime_pVQD_step.main(self.backend, user_messenger, **deserialized_inputs)
+
+			job = self.provider.runtime.run(program_id=program_id,
+								options=options,
+								inputs=inputs,
+								callback=interim_result_callback)
+			runtime_res = job.result()
 
 			self.parameters = runtime_res["new_params"]
 			self.shift      = runtime_res["shift"]

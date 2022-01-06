@@ -13,7 +13,7 @@ mksize = 4
 exactGS = np.load('data/exactGS.npy')
 # exactFE = np.load('data/exactFE.npy')
 
-svVQD = json.load(open('data/VQD/hybrid_test.dat'))
+svVQD = json.load(open('data/VQD/hybrid_test_remote.dat'))
 times = svVQD["times"]
 
 # onestep = json.load(open('data/VQD/runtime_ibm_lagos_NN1_iter30_shots2000.dat'))
@@ -60,7 +60,7 @@ times = svVQD["times"]
 # json.dump(dico, open("data/stataverage_12_noisy_8k_depth1_NN1.dat", 'w+'))
 
 
-# plt.plot(times, exactGS, linestyle='--', color='black')
+plt.plot(times, exactGS, linestyle='--', color='black')
 plt.plot(times, svVQD['E(t)'], 'o')
 # plt.errorbar(times, mean, yerr = std, marker = 'o', markersize = mksize, linestyle = '')
 

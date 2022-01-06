@@ -1,0 +1,84 @@
+{
+    "name": "pvqd-step",
+    "description": "Projected variational quantum dynamics algorithm - 1 time step.",
+    "max_execution_time": 28800,
+    "version": "1.0",
+    "backend_requirements": {
+        "min_num_qubits": 5
+    },
+    "parameters": [
+        {
+            "name": "threshold",
+            "description": "-",
+            "type": "float",
+            "required": false
+        },
+        {
+            "name": "state_wfn",
+            "description": "-",
+            "type": "object",
+            "required": true
+        },
+        {
+            "name": "obs_wfn",
+            "description": "-",
+            "type": "object",
+            "required": true
+        },
+        {
+            "name": "parameters",
+            "description": "-",
+            "type": "array",
+            "required": true
+        },
+        {
+            "name": "shift",
+            "description": "-",
+            "type": "array",
+            "required": true
+        },
+        {
+            "name": "obs_dict",
+            "description": "-",
+            "type": "dict",
+            "required": false
+        },
+        {
+            "name": "max_iter",
+            "description": "-",
+            "type": "int",
+            "required": false
+        },
+        {
+            "name": "shots",
+            "description": "-",
+            "type": "int",
+            "required": false
+        },
+        {
+            "name": "r_circ",
+            "description": "-",
+            "type": "object",
+            "required": true
+        },
+        {
+            "name": "l_circ",
+            "description": "-",
+            "type": "object",
+            "required": true
+        },
+        {
+            "name": "first_measure",
+            "description": "-",
+            "type": "boolean",
+            "required": false
+        }
+    ],
+    "return_values": [
+        {
+            "name": "-",
+            "description": "Dictionary of results.",
+            "type": "dict"
+        }
+    ]
+}
