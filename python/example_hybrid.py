@@ -101,7 +101,8 @@ if __name__ == "__main__":
 	provider = IBMQ.get_provider(
 		hub='ibm-q-research-2', group='epfl-2', project='main')
 	# backend = provider.get_backend('ibmq_qasm_simulator')
-	backend = provider.get_backend('ibm_lagos')
+	# backend = provider.get_backend('ibm_lagos')
+	backend = provider.get_backend('ibmq_manila')
 
 	# backend = Aer.get_backend('qasm_simulator')
 	# backend  = Aer.get_backend('qasm_simulator', noise_model=noise_model)

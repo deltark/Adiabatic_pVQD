@@ -981,7 +981,7 @@ class pVQD:
 				err_grad_t.append(list(self.gradient[:, 1]))
 				grad_norms_t.append(g_norm)
 
-				user_messenger.publish({"grad_t": grad_t, "err_grad_t": err_grad_t, "t_step": i+1})
+				# user_messenger.publish({"grad_t": grad_t, "err_grad_t": err_grad_t, "t_step": i+1})
 
 
 			# Update parameters
@@ -1022,6 +1022,34 @@ class pVQD:
 
 			params.append(list(self.parameters))
 
+			# Save data on file
+
+			log_data = {}
+			if len(obs_dict) > 0:
+				for (obs_name, obs_pauli) in obs_dict.items():
+					log_data[str(obs_name)] = obs_measure[str(obs_name)]
+					log_data['err_'+str(obs_name)] = obs_error['err_'+str(obs_name)]
+
+			log_data['init_F'] = initial_fidelities
+			log_data['final_F'] = fidelities
+			log_data['err_init_F'] = err_init_fid
+			log_data['err_fin_F'] = err_fin_fid
+			log_data['iter_number'] = counter
+			log_data['times'] = times[:i+1]
+			log_data['params'] = list(params)
+			log_data['tot_steps'] = [tot_steps]
+
+			log_data['interm_F'] = list(interm_fidelities)
+			log_data['shifts'] = list(shifts)
+			log_data['gradients'] = list(gradients)
+			log_data['err_grad'] = list(err_grad)
+			log_data['norm_grad'] = list(grad_norms)
+			log_data['njobs'] = list(njobs)
+
+			log_data['time_slice'] = [i+1]
+
+			user_messenger.publish(log_data)
+
 
 
 
@@ -1032,27 +1060,27 @@ class pVQD:
 
 		# Save data on file
 
-		log_data = {}
-		if len(obs_dict) > 0:
-			for (obs_name,obs_pauli) in obs_dict.items():
-				log_data[str(obs_name)]        = obs_measure[str(obs_name)]
-				log_data['err_'+str(obs_name)] = obs_error['err_'+str(obs_name)]
+		# log_data = {}
+		# if len(obs_dict) > 0:
+		# 	for (obs_name,obs_pauli) in obs_dict.items():
+		# 		log_data[str(obs_name)]        = obs_measure[str(obs_name)]
+		# 		log_data['err_'+str(obs_name)] = obs_error['err_'+str(obs_name)]
 
-		log_data['init_F']      = initial_fidelities
-		log_data['final_F']     = fidelities
-		log_data['err_init_F']  = err_init_fid
-		log_data['err_fin_F']   = err_fin_fid
-		log_data['iter_number'] = counter
-		log_data['times']       = times
-		log_data['params']      = list(params)
-		log_data['tot_steps']   = [tot_steps]
+		# log_data['init_F']      = initial_fidelities
+		# log_data['final_F']     = fidelities
+		# log_data['err_init_F']  = err_init_fid
+		# log_data['err_fin_F']   = err_fin_fid
+		# log_data['iter_number'] = counter
+		# log_data['times']       = times
+		# log_data['params']      = list(params)
+		# log_data['tot_steps']   = [tot_steps]
 
-		log_data['interm_F'] = list(interm_fidelities)
-		log_data['shifts'] = list(shifts)
-		log_data['gradients'] = list(gradients)
-		log_data['err_grad'] = list(err_grad)
-		log_data['norm_grad'] = list(grad_norms)
-		log_data['njobs'] = list(njobs)
+		# log_data['interm_F'] = list(interm_fidelities)
+		# log_data['shifts'] = list(shifts)
+		# log_data['gradients'] = list(gradients)
+		# log_data['err_grad'] = list(err_grad)
+		# log_data['norm_grad'] = list(grad_norms)
+		# log_data['njobs'] = list(njobs)
 
 		# log_data['overlap_history'] = overlap_history
 

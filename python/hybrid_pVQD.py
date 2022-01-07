@@ -147,7 +147,7 @@ class pVQD:
 
 
 
-	def run(self,ths,timestep,n_steps,obs_dict={},filename='algo_result.dat',max_iter = 100,initial_point=None):
+	def run(self,ths,timestep,n_steps,obs_dict={},filename='algo_result.dat',max_iter = 100,initial_point=None,start_timestep=0):
 
 
 		## Now prepare the state in order to compute the overlap and its gradient
@@ -224,8 +224,6 @@ class pVQD:
                              callback=interim_result_callback)
 		runtime_res = job.result()
 
-		inputs['first_measure'] = False
-
 		#prepare observables for quench
 
 		if len(obs_dict) > 0:
@@ -236,6 +234,7 @@ class pVQD:
 				obs_measure[str(obs_name)] = [runtime_res["obs_measure"][str(obs_name)]]
 				obs_error['err_'+str(obs_name)] = [runtime_res["obs_error"]['err_'+str(obs_name)]]
 
+		inputs['first_measure'] = False
 
 		counter = []
 		initial_fidelities = []
@@ -254,7 +253,7 @@ class pVQD:
 		params.append(list(self.parameters))
 
 
-		for i in range(n_steps):
+		for i in range(start_timestep, n_steps):
 
 			print('\n================================== \n')
 			print("Time slice:",i+1)

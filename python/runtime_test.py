@@ -45,9 +45,9 @@ ham = ['hzz', 'hx']
 def interim_result_callback(job_id, interim_result):
     print(interim_result)
     print("callback time: ", time.localtime(time.time()))
-    # filename = ('data/VQD/interimstep'+str(interim_result["t_step"])+'_runtime_'+backend.name() +
-    #             '_NN'+str(NN)+'_iter'+str(maxiter)+'_shots'+str(shots)+'.dat')
-    # json.dump(interim_result, open(filename, 'w+'))
+    filename = ('data/interim_runtime/step'+str(interim_result["time_slice"][0])+
+                '_runtime_'+backend.name() +'_NN'+str(NN)+'_iter'+str(maxiter)+'_shots'+str(shots)+'.dat')
+    json.dump(interim_result, open(filename, 'w+'))
 
 
 #pvqd inputs
@@ -83,7 +83,7 @@ user_messenger = UserMessenger()
 
 # print("on hardware:")
 # backend = provider.get_backend('ibmq_qasm_simulator')
-backend = provider.get_backend('ibmq_manila')
+backend = provider.get_backend('ibmq_jakarta')
 # backend = provider.get_backend('ibm_lagos')
 # Configure backend options
 options = {'backend_name': backend.name()}
