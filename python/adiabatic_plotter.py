@@ -13,8 +13,27 @@ mksize = 4
 exactGS = np.load('data/exactGS.npy')
 # exactFE = np.load('data/exactFE.npy')
 
-svVQD = json.load(open('data/VQD/hybrid_test_remote.dat'))
-times = svVQD["times"]
+# svVQD = json.load(open('data/VQD/hybrid_test_remote.dat'))
+# times = svVQD["times"]
+
+runtime = json.load(open(
+    'data/interim_runtime/step6_runtime_ibmq_lima_NN1_iter50_shots8000.dat'))
+# runtime1 = json.load(open('data/VQD/runtimepVQD_full_ibmq_qasm_simulator.dat'))
+times = np.array(runtime["times"])
+
+# plt.plot(times, exactGS, linestyle='--', color='black')
+# plt.plot(times/3, runtime["E(t)"], 'o')
+# plt.xlabel("t/T")
+# plt.ylabel("E(t)")
+# plt.plot(times, runtime2["E(t)"], 'o')
+legend = []
+for i in range(1, len(runtime["interm_F"])):
+    plt.plot(runtime["interm_F"][i])
+    legend.append("step "+str(i))
+plt.legend(legend)
+plt.xlabel("optimization step")
+plt.ylabel("fidelity")
+plt.tight_layout()
 
 # onestep = json.load(open('data/VQD/runtime_ibm_lagos_NN1_iter30_shots2000.dat'))
 # optsteps = onestep["iter_number"][0]
@@ -60,8 +79,8 @@ times = svVQD["times"]
 # json.dump(dico, open("data/stataverage_12_noisy_8k_depth1_NN1.dat", 'w+'))
 
 
-plt.plot(times, exactGS, linestyle='--', color='black')
-plt.plot(times, svVQD['E(t)'], 'o')
+# plt.plot(times, exactGS, linestyle='--', color='black')
+# plt.plot(times, svVQD['E(t)'], 'o')
 # plt.errorbar(times, mean, yerr = std, marker = 'o', markersize = mksize, linestyle = '')
 
 # plt.legend(['exact', 'statevector', '8k shots + noise'])

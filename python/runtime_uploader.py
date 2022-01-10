@@ -9,11 +9,13 @@ provider = IBMQ.get_provider(
 # provider.runtime.delete_program('my-vqe-2')
 
 program_data = os.path.join(
-    os.getcwd(), "runtime_pVQD_step.py")
+    os.getcwd(), "runtime_pVQD.py")
 program_json = os.path.join(
-    os.getcwd(), "runtime_pVQD_step.json")
+    os.getcwd(), "runtime_pVQD.json")
 
-provider.runtime.update_program(program_id='pvqd-step-VRoB5bxpDy',
+program_id = "p-vqd-xL289veY54"
+
+provider.runtime.update_program(program_id=program_id,
     data=program_data,
     metadata=program_json
 )

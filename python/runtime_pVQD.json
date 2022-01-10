@@ -50,6 +50,12 @@
             "required": false
         },
         {
+            "name": "ansatz",
+            "description": "-",
+            "type": "string",
+            "required": false
+        },
+        {
             "name": "NN",
             "description": "-",
             "type": "int",
@@ -83,6 +89,12 @@
             "name": "iterations",
             "description": "Max number of optimization steps for each time step.",
             "type": "int",
+            "required": false
+        },
+        {
+            "name": "initial_point",
+            "description": "-",
+            "type": "dict",
             "required": false
         }
     ],

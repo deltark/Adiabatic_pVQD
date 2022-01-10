@@ -1,3 +1,4 @@
+from logging import raiseExceptions
 from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister
 # from logging import log
 import numpy as np
@@ -367,6 +368,51 @@ def custom_hweff_ansatz(n_spins, depth, p):
 			circuit.barrier()
 
 	return circuit
+
+#==========================================
+
+def efficient_SU2(n_spins, depth, p):
+
+	count = 0
+	circuit = QuantumCircuit(n_spins)
+
+	for i in range(n_spins):
+		circuit.h(i)
+
+	for j in range(depth):
+
+		# Rzz - Rx block
+		for i in range(n_spins):
+			circuit.ry(p[count], i)
+			count = count + 1
+
+		circuit.barrier()
+
+		for i in range(n_spins):
+			circuit.rz(p[count], i)
+			count = count + 1
+
+		circuit.barrier()
+
+		for i in range(n_spins-1):
+			circuit.cnot(i, i+1)
+		circuit.cnot(0, n_spins-1)
+		
+		circuit.barrier()
+
+		
+	for i in range(n_spins):
+		circuit.ry(p[count], i)
+		count = count + 1
+
+	circuit.barrier()
+
+	for i in range(n_spins):
+		circuit.rz(p[count], i)
+		count = count + 1
+
+	return circuit
+
 #############################################################################################""
 
 # p-VQD
@@ -835,50 +881,77 @@ class pVQD:
 			ham_circuit = self.construct_hamiltonian()
 			obs_dict['E(t)'] = ham_circuit.assign_parameters(ham_dict[0])
 
-		tot_steps= 0
-
-		if initial_point != None :
-			if len(initial_point) != len(self.parameters):
-				print("TypeError: Initial parameters are not of the same size of circuit parameters")
-				return
-
-
-			print("\nRestart from: ")
-			print(initial_point)
-			self.parameters = initial_point
+		tot_steps = 0
+		time_slice = 0
 
 		print("Running the algorithm")
 
+		if initial_point != None :
+			if len(initial_point["params"][0]) != len(self.parameters):
+				print("TypeError: Initial parameters are not of the same size of circuit parameters")
+				return
+
+			time_slice = initial_point["time_slice"][0]
+			print("\nRestart from: ")
+			print("step "+str(time_slice))
+			self.parameters = initial_point["params"][-1]
+			self.shift = initial_point["shifts"][-1][-1]
+			# self.gradient = initial_point["gradients"][-1][-1]
+			# self.njobs = initial_point["njobs"][-1]
+
+			if len(obs_dict) > 0:
+				obs_measure = {}
+				obs_error = {}
+
+				for (obs_name, obs_pauli) in obs_dict.items():
+					obs_measure[str(obs_name)] = initial_point[str(obs_name)]
+					obs_error['err_'+str(obs_name)] = initial_point['err_'+str(obs_name)]
+
+			counter = initial_point["iter_number"]
+			initial_fidelities = initial_point["init_F"]
+			fidelities = initial_point["final_F"]
+			err_fin_fid = initial_point["err_fin_F"]
+			err_init_fid = initial_point["err_init_F"]
+			params = initial_point["params"]
+
+			interm_fidelities = initial_point["interm_F"]  # save intermediate fidelities
+			shifts = initial_point["shifts"]  # save all parameter shifts
+			gradients = initial_point["gradients"]  # save all evaluated gradients
+			err_grad = initial_point["err_grad"]
+			grad_norms = initial_point["norm_grad"]
+			njobs = initial_point["njobs"]  # save the number of jobs submitted to hardware
+
+		else:
 		#prepare observables for quench
 
-		if len(obs_dict) > 0:
-			obs_measure = {}
-			obs_error   = {}
+			if len(obs_dict) > 0:
+				obs_measure = {}
+				obs_error   = {}
 
-			for (obs_name,obs_pauli) in obs_dict.items():
-				first_measure                   = self.measure_aux_ops(obs_wfn,obs_pauli,self.parameters,expectation,sampler)
-				obs_measure[str(obs_name)]      = [first_measure[0]]
-				obs_error['err_'+str(obs_name)] = [first_measure[1]]
-
-
-		counter = []
-		initial_fidelities = []
-		fidelities = []
-		err_fin_fid = []
-		err_init_fid = []
-		params = []
-
-		interm_fidelities = [] #save intermediate fidelities
-		shifts = [] #save all parameter shifts
-		gradients = [] #save all evaluated gradients
-		err_grad = []
-		grad_norms = []
-		njobs = [] #save the number of jobs submitted to hardware
-
-		params.append(list(self.parameters))
+				for (obs_name,obs_pauli) in obs_dict.items():
+					first_measure                   = self.measure_aux_ops(obs_wfn,obs_pauli,self.parameters,expectation,sampler)
+					obs_measure[str(obs_name)]      = [first_measure[0]]
+					obs_error['err_'+str(obs_name)] = [first_measure[1]]
 
 
-		for i in range(n_steps):
+			counter = []
+			initial_fidelities = []
+			fidelities = []
+			err_fin_fid = []
+			err_init_fid = []
+			params = []
+
+			interm_fidelities = [] #save intermediate fidelities
+			shifts = [] #save all parameter shifts
+			gradients = [] #save all evaluated gradients
+			err_grad = []
+			grad_norms = []
+			njobs = [] #save the number of jobs submitted to hardware
+
+			params.append(list(self.parameters))
+
+
+		for i in range(time_slice, n_steps):
 
 			print('\n================================== \n')
 			print("Time slice:",i+1)
@@ -1035,7 +1108,7 @@ class pVQD:
 			log_data['err_init_F'] = err_init_fid
 			log_data['err_fin_F'] = err_fin_fid
 			log_data['iter_number'] = counter
-			log_data['times'] = times[:i+1]
+			log_data['times'] = times[:i+2]
 			log_data['params'] = list(params)
 			log_data['tot_steps'] = [tot_steps]
 
@@ -1109,6 +1182,7 @@ def main(backend, user_messenger, **kwargs):
 	n_steps = int(tmax/dt)
 	ths 	= kwargs.pop('threshold', 0.99999)
 	depth 	= kwargs.pop('depth', 1)
+	anstz   = kwargs.pop('ansatz', 'hweff')
 	NN 		= kwargs.pop('NN', 1) #nearest neighbor
 	HamDict = kwargs.pop('hamiltonian', ['hzz', 'hx'])
 	# ansatz  = kwargs.pop('ansatz', hweff_ansatz_adiab)
@@ -1117,6 +1191,7 @@ def main(backend, user_messenger, **kwargs):
 	opt     = kwargs.pop('optimizer', 'sgd')
 	obs     = kwargs.pop('obs', {'E': generate_ising(nqubits, V, g)})
 	max_iter= kwargs.pop('iterations', 30)
+	initial_point = kwargs.pop('initial_point', None)
 
 	H = []
 	for label in HamDict:
@@ -1127,12 +1202,17 @@ def main(backend, user_messenger, **kwargs):
 
 	H_tfunc = [lambda x: x/tmax]
 
-	if NN == 1:
-		ansatz = hweff_ansatz_adiab
-		ex_params = np.zeros(depth*nqubits + depth*(nqubits-1))
-	else:
-		ansatz = custom_hweff_ansatz
-		ex_params = np.zeros(depth*((nqubits-1) + (nqubits-2) + nqubits))
+	if anstz == 'hweff':
+		if NN == 1:
+			ansatz = hweff_ansatz_adiab
+			ex_params = np.zeros(depth*nqubits + depth*(nqubits-1))
+		else:
+			ansatz = custom_hweff_ansatz
+			ex_params = np.zeros(depth*((nqubits-1) + (nqubits-2) + nqubits))
+
+	elif anstz == 'su2':
+		ansatz = efficient_SU2
+		ex_params = np.zeros(nqubits*2 + depth*nqubits*2)
 
 	shift = np.zeros(len(ex_params))
 

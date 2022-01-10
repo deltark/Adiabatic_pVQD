@@ -31,13 +31,17 @@ provider = IBMQ.get_provider(
 # print(f"Backends that support Qiskit Runtime: {runtime_backends}")
 nqubits = 3
 tmax = 3.0
-dt = 0.06
+dt = 0.05
 NN = 1
-maxiter = 30
-shots = 2000
+maxiter = 50
+shots = 8000
 # hzz = generate_ising_Hzz(nqubits, -1.0)
 # hx = generate_ising_Hx(nqubits, -1.0)
 ham = ['hzz', 'hx']
+anstz = "hweff"
+
+inital_point = json.load(open(
+    'data/interim_runtime/step6_runtime_ibmq_lima_NN1_iter50_shots8000.dat'))
 
 # h_tfunc = [lambda x: x/tmax]
 
@@ -45,14 +49,14 @@ ham = ['hzz', 'hx']
 def interim_result_callback(job_id, interim_result):
     print(interim_result)
     print("callback time: ", time.localtime(time.time()))
-    filename = ('data/interim_runtime/step'+str(interim_result["time_slice"][0])+
-                '_runtime_'+backend.name() +'_NN'+str(NN)+'_iter'+str(maxiter)+'_shots'+str(shots)+'.dat')
+    filename = ('data/interim_runtime/'+backend.name() + '_NN'+str(NN) +
+                '_iter'+str(maxiter)+'_shots'+str(shots)+'.dat')
     json.dump(interim_result, open(filename, 'w+'))
 
 
 #pvqd inputs
 inputs = {"nqubits": nqubits, "iterations": maxiter, "tmax": tmax, "dt": dt,
-          "hamiltonian": ham, "NN": NN, "shots": shots}
+          "hamiltonian": ham, "NN": NN, "shots": shots, "ansatz": anstz, "initial_point": inital_point}
 
 #vqe inputs?
 # def dumb_ansatz(n_spins, p):
@@ -83,8 +87,8 @@ user_messenger = UserMessenger()
 
 # print("on hardware:")
 # backend = provider.get_backend('ibmq_qasm_simulator')
-backend = provider.get_backend('ibmq_jakarta')
-# backend = provider.get_backend('ibm_lagos')
+backend = provider.get_backend('ibmq_lima')
+# backend = provider.get_backend('ibm_perth')
 # Configure backend options
 options = {'backend_name': backend.name()}
 program_id = "p-vqd-xL289veY54"
