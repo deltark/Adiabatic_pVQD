@@ -894,8 +894,8 @@ class pVQD:
 			time_slice = initial_point["time_slice"][0]
 			print("\nRestart from: ")
 			print("step "+str(time_slice))
-			self.parameters = initial_point["params"][-1]
-			self.shift = initial_point["shifts"][-1][-1]
+			self.parameters = np.array(initial_point["params"][-1])
+			self.shift = np.array(initial_point["shifts"][-1][-1])
 			# self.gradient = initial_point["gradients"][-1][-1]
 			# self.njobs = initial_point["njobs"][-1]
 
@@ -1223,9 +1223,9 @@ def main(backend, user_messenger, **kwargs):
 
 	begin = time.time()
 	output = algo.run(ths, dt, n_steps, user_messenger, obs_dict=obs, max_iter=max_iter, opt=opt,
-					 grad='separated_param_shift')
+					 grad='separated_param_shift', initial_point=initial_point)
 	end = time.time() - begin
-	output["exec_time"] = end
+	output["exec_time"] = initial_point["exec_time"]+end
 
 	return output
 
