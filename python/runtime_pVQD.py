@@ -953,11 +953,11 @@ class pVQD:
 
 		for i in range(time_slice, n_steps):
 
-			print('\n================================== \n')
-			print("Time slice:",i+1)
-			print("Shift before optimizing this step:",self.shift)
-			print("Initial parameters:", self.parameters)
-			print('\n================================== \n')
+			# print('\n================================== \n')
+			# print("Time slice:",i+1)
+			# print("Shift before optimizing this step:",self.shift)
+			# print("Initial parameters:", self.parameters)
+			# print('\n================================== \n')
 
 			interm_fid_t = [] #will go inside interm_fidelities
 			shifts_t = [] #will go inside shifts
@@ -997,7 +997,7 @@ class pVQD:
 
 
 			while self.overlap[0] < ths and count < max_iter: # and g_norm > len(params)*8e-6:
-				print("Shift optimizing step:",count+1)
+				# print("Shift optimizing step:",count+1)
 				count = count +1
 
 				if opt == 'momentum':
@@ -1024,8 +1024,8 @@ class pVQD:
 
 					# shifts_t.append(list(self.shift))
 
-				print('Overlap',self.overlap)
-				print('Gradient', self.gradient[:, 0])
+				# print('Overlap',self.overlap)
+				# print('Gradient', self.gradient[:, 0])
 
 				overlap_history.append(self.overlap[0])
 
@@ -1059,13 +1059,18 @@ class pVQD:
 
 			# Update parameters
 
+			# Select best configuration
+			best_index = np.argmax(interm_fid_t)
+			self.shift = np.array(shifts_t[best_index])
+			self.overlap = np.array([interm_fid_t[best_index], 0])
 
-			print('\n---------------------------------- \n')
 
-			print("Shift after optimizing:",self.shift)
-			print("New parameters:"        ,self.parameters + self.shift)
+			# print('\n---------------------------------- \n')
 
-			print("New overlap: "          ,self.overlap[0])
+			# print("Shift after optimizing:",self.shift)
+			# print("New parameters:"        ,self.parameters + self.shift)
+
+			# print("New overlap: "          ,self.overlap[0])
 
 			self.parameters = self.parameters + self.shift
 
@@ -1126,8 +1131,8 @@ class pVQD:
 
 
 
-		print("Total measurements:",tot_steps)
-		print("Measure per step:", tot_steps/n_steps)
+		# print("Total measurements:",tot_steps)
+		# print("Measure per step:", tot_steps/n_steps)
 
 		# print("overlap_history ", overlap_history)
 

@@ -13,26 +13,28 @@ mksize = 4
 exactGS = np.load('data/exactGS.npy')
 # exactFE = np.load('data/exactFE.npy')
 
-# svVQD = json.load(open('data/VQD/hybrid_test_remote.dat'))
+svVQD = json.load(open('data/VQD/T3_dt05_sv.dat'))
 # times = svVQD["times"]
 
 runtime = json.load(open(
-    'data/interim_runtime/step6_runtime_ibmq_lima_NN1_iter50_shots8000.dat'))
-# runtime1 = json.load(open('data/VQD/runtimepVQD_full_ibmq_qasm_simulator.dat'))
+    'data/interim_runtime/ibmq_lima_NN1_iter50_shots8000.dat'))
+# runtime = json.load(open('data/VQD/runtimepVQD_full_ibmq_qasm_simulator.dat'))
 times = np.array(runtime["times"])
 
-# plt.plot(times, exactGS, linestyle='--', color='black')
-# plt.plot(times/3, runtime["E(t)"], 'o')
-# plt.xlabel("t/T")
-# plt.ylabel("E(t)")
+plt.plot(times/3, exactGS[:runtime["time_slice"][0]+1], linestyle='--', color='black')
+plt.plot(times/3, svVQD["E(t)"][:runtime["time_slice"][0]+1], 'o')
+plt.plot(times/3, runtime["E(t)"], 'o')
+plt.xlabel("t/T")
+plt.ylabel("E(t)")
+plt.legend(["exact GS", "statevector", "hardware"])
 # plt.plot(times, runtime2["E(t)"], 'o')
-legend = []
-for i in range(1, len(runtime["interm_F"])):
-    plt.plot(runtime["interm_F"][i])
-    legend.append("step "+str(i))
-plt.legend(legend)
-plt.xlabel("optimization step")
-plt.ylabel("fidelity")
+# legend = []
+# for i in range(6, len(runtime["interm_F"])):
+#     plt.plot(runtime["interm_F"][i])
+#     legend.append("step "+str(i+1))
+# plt.legend(legend)
+# plt.xlabel("optimization step")
+# plt.ylabel("fidelity")
 plt.tight_layout()
 
 # onestep = json.load(open('data/VQD/runtime_ibm_lagos_NN1_iter30_shots2000.dat'))

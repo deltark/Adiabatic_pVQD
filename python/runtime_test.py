@@ -33,8 +33,8 @@ nqubits = 3
 tmax = 3.0
 dt = 0.05
 NN = 1
-maxiter = 50
-shots = 8000
+maxiter = 20
+shots = 2000
 # hzz = generate_ising_Hzz(nqubits, -1.0)
 # hx = generate_ising_Hx(nqubits, -1.0)
 ham = ['hzz', 'hx']
@@ -49,7 +49,7 @@ inital_point = json.load(open(
 def interim_result_callback(job_id, interim_result):
     print(interim_result)
     print("callback time: ", time.localtime(time.time()))
-    filename = ('data/interim_runtime/'+backend.name() + '_NN'+str(NN) +
+    filename = ('data/interim_runtime/step'+str(interim_result["time_slice"][0])+'_'+backend.name() + '_NN'+str(NN) +
                 '_iter'+str(maxiter)+'_shots'+str(shots)+'.dat')
     json.dump(interim_result, open(filename, 'w+'))
 
