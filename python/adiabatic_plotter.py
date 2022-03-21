@@ -16,26 +16,38 @@ exactGS = np.load('data/exactGS.npy')
 svVQD = json.load(open('data/VQD/T3_dt05_sv.dat'))
 # times = svVQD["times"]
 
-runtime = json.load(open(
-    'data/interim_runtime/ibmq_lima_NN1_iter50_shots8000.dat'))
-# runtime = json.load(open('data/VQD/runtimepVQD_full_ibmq_qasm_simulator.dat'))
+# runtime = json.load(open(
+#     'data/interim_runtime/err_mitig_step19_ibmq_lima_NN1_iter20_shots8000.dat'))
+runtime = json.load(open('data/VQD/neldermead_test.dat'))
+runtime2 = json.load(open('data/VQD/linesearch_qasm_T3_dt0.06_shots15000.dat'))
+# runtime3 = json.load(open('data/VQD/neldermead_qasm_T3_dt0.05_shots100000.dat'))
 times = np.array(runtime["times"])
 
+# plt.figure()
+# plt.plot(runtime["final_F"], 'o')
+
+plt.figure()
 plt.plot(times/3, exactGS[:runtime["time_slice"][0]+1], linestyle='--', color='black')
 plt.plot(times/3, svVQD["E(t)"][:runtime["time_slice"][0]+1], 'o')
-plt.plot(times/3, runtime["E(t)"], 'o')
-plt.xlabel("t/T")
-plt.ylabel("E(t)")
-plt.legend(["exact GS", "statevector", "hardware"])
-# plt.plot(times, runtime2["E(t)"], 'o')
+# plt.plot(times/3, runtime["E(t)"], 'o')
+plt.plot(np.array(runtime2["times"])/3, runtime2["E(t)"], 'o')
+# plt.plot(np.array(runtime3["times"])/3, runtime3["E(t)"], 'o')
+plt.xlabel(r"$\tau$")
+plt.ylabel(r'$\langle H(\tau) \rangle$')
+# plt.legend(["Exact evolution", "SGD", "NM SV", "NM QASM"])
+plt.tight_layout()
+
+# plt.figure()
 # legend = []
-# for i in range(6, len(runtime["interm_F"])):
+# # len(runtime["interm_F"])
+# for i in range(4, 8):
 #     plt.plot(runtime["interm_F"][i])
 #     legend.append("step "+str(i+1))
 # plt.legend(legend)
-# plt.xlabel("optimization step")
-# plt.ylabel("fidelity")
-plt.tight_layout()
+# plt.xlabel("Optimization step")
+# plt.ylabel("Fidelity")
+
+# plt.tight_layout()
 
 # onestep = json.load(open('data/VQD/runtime_ibm_lagos_NN1_iter30_shots2000.dat'))
 # optsteps = onestep["iter_number"][0]

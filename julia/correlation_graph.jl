@@ -59,6 +59,6 @@ for (k,tmax) in enumerate([1.0, 2.0, 4.0, 7.0, 10.0])
 end
 
 plt.xlabel(L"x")
-plt.ylabel("ZZ Correlation")
+plt.ylabel(L"C(T,t=T,x)")
 plt.legend(legend)
 plt.gcf()

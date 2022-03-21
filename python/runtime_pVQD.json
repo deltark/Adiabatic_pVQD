@@ -96,6 +96,12 @@
             "description": "-",
             "type": "dict",
             "required": false
+        },
+        {
+            "name": "measurement_error_mitigation",
+            "description": "-",
+            "type": "boolean",
+            "required": false
         }
     ],
     "return_values": [

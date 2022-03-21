@@ -15,6 +15,7 @@ from qiskit.circuit import ParameterVector, QuantumCircuit
 from qiskit.circuit.library.n_local import EfficientSU2
 
 from qiskit import IBMQ
+from torch import threshold
 
 import runtime_pVQD
 
@@ -30,18 +31,22 @@ provider = IBMQ.get_provider(
 # runtime_backends = provider.backends(input_allowed='runtime')
 # print(f"Backends that support Qiskit Runtime: {runtime_backends}")
 nqubits = 3
-tmax = 3.0
+tmax = 3
 dt = 0.05
 NN = 1
-maxiter = 20
-shots = 2000
+maxiter = 100
+shots = 1
+# shots = 100000
+threshold = 0.99999
 # hzz = generate_ising_Hzz(nqubits, -1.0)
 # hx = generate_ising_Hx(nqubits, -1.0)
+optimizer = 'line search'
 ham = ['hzz', 'hx']
 anstz = "hweff"
 
-inital_point = json.load(open(
-    'data/interim_runtime/step6_runtime_ibmq_lima_NN1_iter50_shots8000.dat'))
+# inital_point = json.load(open(
+#     'data/interim_runtime/err_mitig_step10_ibmq_lima_NN1_iter20_shots8000.dat'))
+initial_point = None
 
 # h_tfunc = [lambda x: x/tmax]
 
@@ -49,14 +54,15 @@ inital_point = json.load(open(
 def interim_result_callback(job_id, interim_result):
     print(interim_result)
     print("callback time: ", time.localtime(time.time()))
-    filename = ('data/interim_runtime/step'+str(interim_result["time_slice"][0])+'_'+backend.name() + '_NN'+str(NN) +
+    filename = ('data/interim_runtime/err_mitig_step'+str(interim_result["time_slice"][0])+'_'+backend.name() + '_NN'+str(NN) +
                 '_iter'+str(maxiter)+'_shots'+str(shots)+'.dat')
     json.dump(interim_result, open(filename, 'w+'))
 
 
 #pvqd inputs
 inputs = {"nqubits": nqubits, "iterations": maxiter, "tmax": tmax, "dt": dt,
-          "hamiltonian": ham, "NN": NN, "shots": shots, "ansatz": anstz, "initial_point": inital_point}
+          "hamiltonian": ham, "NN": NN, "shots": shots, "ansatz": anstz, "initial_point": initial_point,
+          "measurement_error_mitigation": False, "optimizer": optimizer, "threshold": threshold}
 
 #vqe inputs?
 # def dumb_ansatz(n_spins, p):
@@ -71,52 +77,53 @@ inputs = {"nqubits": nqubits, "iterations": maxiter, "tmax": tmax, "dt": dt,
 # optimizer = {'name': 'QN-SPSA', 'maxiter': maxiter}
 # inputs = {"ansatz": ansatz, "operator": ham, "optimizer": optimizer, "measurement_error_mitigation": True}
 
+backend = Aer.get_backend('statevector_simulator')
 # backend = Aer.get_backend('qasm_simulator')
 user_messenger = UserMessenger()
-# serialized_inputs = json.dumps(inputs, cls=RuntimeEncoder)
-# deserialized_inputs = json.loads(serialized_inputs, cls=RuntimeDecoder)
+serialized_inputs = json.dumps(inputs, cls=RuntimeEncoder)
+deserialized_inputs = json.loads(serialized_inputs, cls=RuntimeDecoder)
 
-# res = runtime_pVQD.main(backend, user_messenger, **deserialized_inputs)
-# print(res)
-# print("\n")
+result = runtime_pVQD.main(backend, user_messenger, **deserialized_inputs)
+print(result)
+print("\n")
 
 
 # def interim_result_callback(job_id, interim_result):
 #     print(f"interim result: {interim_result}")
 
+################################# HARDWARE
+# # print("on hardware:")
+# # backend = provider.get_backend('ibmq_qasm_simulator')
+# backend = provider.get_backend('ibmq_lima')
+# # backend = provider.get_backend('ibm_lagos')
+# # backend = provider.get_backend('simulator_statevector')
+# # Configure backend options
+# options = {'backend_name': backend.name()}
+# program_id = "p-vqd-xL289veY54"
 
-# print("on hardware:")
-# backend = provider.get_backend('ibmq_qasm_simulator')
-backend = provider.get_backend('ibmq_lima')
-# backend = provider.get_backend('ibm_perth')
-# Configure backend options
-options = {'backend_name': backend.name()}
-program_id = "p-vqd-xL289veY54"
-# program_id = "vqe"
+# # tic = time.time()
+# # hour = time.localtime(tic)
+# # print("Ding dong, il est ", hour)
+# job = provider.runtime.run(program_id=program_id,
+#                            options=options,
+#                            inputs=inputs,
+#                            callback=interim_result_callback)
 
-# Execute the circuit using the "circuit-runner" program.
-# tic = time.time()
-# hour = time.localtime(tic)
-# print("Ding dong, il est ", hour)
-job = provider.runtime.run(program_id=program_id,
-                           options=options,
-                           inputs=inputs,
-                           callback=interim_result_callback)
+# # Get runtime job result.
+# # begin = time.time()
+# result = job.result()
+# # end = time.time()-begin
+# # tac = time.time()
+# # print("total time since submission: ", tac-tic)
+# # hour = time.localtime(tac)
+# # print("Ding dong, il est ", hour)
 
-# Get runtime job result.
-# begin = time.time()
-result = job.result()
-# end = time.time()-begin
-# tac = time.time()
-# print("total time since submission: ", tac-tic)
-# hour = time.localtime(tac)
-# print("Ding dong, il est ", hour)
-
-# result['exec_time'] = end
-print(result)
+# # result['exec_time'] = end
+# print(result)
 # filename = ('data/test_vqe_lagos_QN-SPSA.dat')
 # filename = ('data/VQD/runtime_'+backend.name()+'_NN'+str(NN)+'_iter'+str(maxiter)+'_shots'+str(shots)+'.dat')
-filename = ('data/VQD/runtimepVQD_full_'+backend.name()+'.dat')
+# filename = ('data/VQD/runtimepVQD_full_errmitig_'+backend.name()+'.dat')
+filename = ('data/VQD/linesearch_optsteps_'+backend.name()+'_T'+str(tmax)+'_dt'+str(dt)+'_shots'+str(shots)+'.dat')
 json.dump(result, open(filename, 'w+'))
 
 

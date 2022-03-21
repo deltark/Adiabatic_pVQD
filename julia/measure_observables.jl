@@ -6,10 +6,10 @@ using QuAlgorithmZoo: Adam, update!
 include("pvqd_functions.jl")
 import PyPlot;
 const plt = PyPlot;
-import cmcrameri;
-const cm = cmcrameri.cm;
+# import cmcrameri;
+# const cm = cmcrameri.cm;
 
-palette = cm.tokyo
+# palette = cm.tokyo
 
 # Now import useful subroutines from python
 pushfirst!(PyVector(pyimport("sys")."path"), "")
@@ -64,9 +64,10 @@ exact_energies_relative = exact["energies"] .- last(exact["energies"])
 
 # plt.hlines(last(exact["energies"]), 0, (tmax+0.1), linestyle="--", color="grey")
 plt.plot(exact["times"] ./ tmax, exact_energies_relative, linestyle = "dashed", color = "black")
-plt.plot(times ./ tmax, obs_values .- last(exact["energies"]), marker = "o", linestyle = "-", markersize = 4, color = palette)
-# plt.errorbar(times, noiseNN1["mean_energy"], yerr = noiseNN1["std"], marker = "^", linestyle = "", markersize = 4, capsize = 2)
+plt.plot(times ./ tmax, obs_values .- last(exact["energies"]), marker = "o", linestyle = "", markersize = 4)
+# plt.errorbar(times./tmax, noiseNN1["mean_energy"].- last(exact["energies"]), yerr = noiseNN1["std"], marker = "^", linestyle = "", markersize = 4, capsize = 2)
 # plt.errorbar(times, noise["mean_energy"], yerr = noise["std"], marker = "d", linestyle = "", markersize = 4, capsize = 2)
+# plt.legend(["Exact evolution", "Statevector", "Noisy simulation (averaged over 12 runs)"])
 
 #Plot to show how much worse Trotter is
 # time_steps = [0.4, 0.6]
@@ -84,17 +85,17 @@ legend = ["Exact evolution", "pVQD"]
 count = 1
 for nsteps in trotter_steps
     trotter = JSON.parse(open("data/trotter/T" * string(tmax) * "_dt0.3_nsteps" * string(nsteps) * "_nshots" * string(shots) * "_fixed.dat", "r"))
-    plt.plot(trotter["times"] ./ tmax, trotter["energies"] .- last(exact["energies"]), markers[count], markersize = 4, linestyle = "--", color = palette)
+    plt.plot(trotter["times"] ./ tmax, trotter["energies"] .- last(exact["energies"]), markers[count], markersize = 4, linestyle = "-")
     push!(legend, ("Trotter nsteps = " * string(nsteps)))
     global count += 1
 end
-# push!(legend, "exact final")
+# # push!(legend, "exact final")
 
 plt.xlabel(L"$\tau$")
 plt.ylabel(L"$\langle H(\tau ) \rangle - E_{GS} $")
 plt.ylim([-0.01, 0.6])
 plt.legend(legend)
-#
+# #
 plt.gcf()
 
 

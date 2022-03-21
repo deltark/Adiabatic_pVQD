@@ -6,8 +6,9 @@ import time
 # import json
 # import functools
 # import itertools
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 # from scipy   import  linalg as LA
+import copy
 
 
 
@@ -29,6 +30,9 @@ from qiskit.providers.ibmq.runtime import UserMessenger
 ### pauli_function.py
 from qiskit.quantum_info import Pauli
 from qiskit.opflow import PauliOp, SummedOp
+
+#error mitigation
+from qiskit.ignis.mitigation.measurement import CompleteMeasFitter
 
 
 def generate_pauli(idx_x, idx_z, n):
@@ -672,7 +676,7 @@ class pVQD:
 
 	def compute_overlap(self, state_wfn, parameters, shift, expectator, sampler):
 
-		nparameters = len(parameters)
+		# nparameters = len(parameters)
 		# build dictionary of parameters to values
 		# {left[0]: parameters[0], .. ., right[0]: parameters[0] + shift[0], ...}
 
@@ -698,9 +702,9 @@ class pVQD:
 			#mean  = np.power(np.absolute(mean),2)
 			est_err = 0
 
-			# if (not self.instance.is_statevector):
-			# 	variance = expectator.compute_variance(sampled_op).real
-			# 	est_err = np.sqrt(variance/self.shots)
+			if (not self.instance.is_statevector):
+				variance = expectator.compute_variance(sampled_op).real
+				est_err = np.sqrt(variance/self.shots)
 
 			results.append([mean, est_err])
 
@@ -716,7 +720,7 @@ class pVQD:
 		# 	# var(G) = var(Ep) * (dG/dEp)**2 + var(Em) * (dG/dEm)**2
 		# 	g[i, :] = (rplus[0]-rminus[0])/2.0, np.sqrt(rplus[1]**2+rminus[1]**2)/2.0
 
-		self.overlap = E  # evaluate with statevec
+		# self.overlap = E
 		# self.gradient = g
 
 		return E
@@ -842,16 +846,115 @@ class pVQD:
 
 		return new_shift
 
+	def nelder_mead(self, f, simplex,
+                alpha=1., gamma=2., rho=-0.5, sigma=0.5):
+		'''
+			@param f (function): function to optimize, must return a scalar score
+				and operate over a numpy array of the same dimensions as x_start
+			@param x_start (numpy array): initial position
+			@param step (float): look-around radius in initial step
+			@no_improv_thr,  no_improv_break (float, int): break after no_improv_break iterations with
+				an improvement lower than no_improv_thr
+			@max_iter (int): always break after this number of iterations.
+				Set it to 0 to loop indefinitely.
+			@alpha, gamma, rho, sigma (floats): parameters of the algorithm
+				(see Wikipedia page for reference)
+			return: tuple (best parameter array, best score)
+		'''
+
+		# init
+		dim = len(self.shift)
+		# prev_best = self.overlap
+		# # no_improv = 0
+		# res = [[self.shift, prev_best]]
+
+		# for i in range(dim):
+		# 	x = copy.copy(self.shift)
+		# 	x[i] = x[i] + step
+		# 	score = f(x)
+		# 	res.append([x, score])
+
+		# # simplex iter
+		# iters = 0
+		# while 1:
+		# order
+		# simplex.sort(key=lambda x: -x[1])
+		# best = res[0][1]
+
+		# # break after max_iter
+		# if max_iter and iters >= max_iter:
+		# 	return res[0]
+		# iters += 1
+
+		# # break after no_improv_break iterations with no improvement
+		# print('...best so far:', best)
+
+		# if best < prev_best - no_improve_thr:
+		# 	no_improv = 0
+		# 	prev_best = best
+		# else:
+		# 	no_improv += 1
+
+		# if no_improv >= no_improv_break:
+		# 	return res[0]
+
+		# centroid
+		x0 = [0.] * dim
+		for tup in simplex[:-1]:
+			for i, c in enumerate(tup[0]):
+				x0[i] += c / (len(simplex)-1)
+
+		# reflection
+		xr = x0 + alpha*(x0 - simplex[-1][0])
+		rscore = f(xr)
+		if simplex[0][1][0] >= rscore[0] > simplex[-2][1][0]:
+			del simplex[-1]
+			simplex.append([xr, rscore])
+
+		# expansion
+		elif rscore[0] > simplex[0][1][0]:
+			xe = x0 + gamma*(x0 - simplex[-1][0])
+			escore = f(xe)
+			if escore[0] > rscore[0]:
+				del simplex[-1]
+				simplex.append([xe, escore])
+			else:
+				del simplex[-1]
+				simplex.append([xr, rscore])
+
+		else:
+			# contraction
+			xc = x0 + rho*(x0 - simplex[-1][0])
+			cscore = f(xc)
+			if cscore[0] > simplex[-1][1][0]:
+				del simplex[-1]
+				simplex.append([xc, cscore])
+
+			else:
+				# reduction
+				x1 = simplex[0][0]
+				nres = []
+				for tup in simplex:
+					redx = x1 + sigma*(tup[0] - x1)
+					score = f(redx)
+					nres.append([redx, score])
+				simplex = nres
+
+		simplex.sort(key=lambda x: x[1][0], reverse=True)
+		
+		return simplex
+
 
 	def run(self,ths,timestep,n_steps,user_messenger:UserMessenger,obs_dict={},max_iter = 100,opt='sgd',grad='separated_param_shift',initial_point=None):
 
 
 
 		## initialize useful quantities once
-		if(self.instance.is_statevector):
-			expectation = PauliExpectation()
-		if(not self.instance.is_statevector):
-			expectation = PauliExpectation()
+		expectation = PauliExpectation()
+		# if(self.instance.is_statevector):
+		# 	expectation = PauliExpectation()
+		# if(not self.instance.is_statevector):
+		# 	expectation = PauliExpectation()
 
 		sampler = CircuitSampler(self.instance)
 
@@ -960,7 +1063,7 @@ class pVQD:
 			# print('\n================================== \n')
 
 			interm_fid_t = [] #will go inside interm_fidelities
-			shifts_t = [] #will go inside shifts
+			shifts_t = [list(self.shift)] #will go inside shifts
 			grad_t = []
 			err_grad_t = []
 			grad_norms_t = []
@@ -984,6 +1087,20 @@ class pVQD:
 			self.overlap = [0.01,0]
 			g_norm = 1
 
+			if opt == 'nelder-mead':
+				# init
+				dim = len(self.shift)
+				# no_improv = 0
+				simplex = [[self.shift, self.overlap]]
+
+				for d in range(dim):
+					x_nm = copy.copy(self.shift)
+					x_nm[d] = x_nm[d] + 0.1
+					score = self.compute_overlap(state_wfn_Ht,self.parameters,self.shift,expectation,sampler)
+					simplex.append([x_nm, score])
+
+				simplex.sort(key=lambda x: x[1][0], reverse=True)
+
 			if opt == 'adam':
 				m = np.zeros(len(self.parameters))
 				v = np.zeros(len(self.parameters))
@@ -995,74 +1112,144 @@ class pVQD:
 			# Save data of overlaps for analysis
 			overlap_history = []
 
+			if opt == 'line search':
+				from scipy.optimize import curve_fit
+				def f(x, a0, k, x0):
+					return a0+(k/2.0)*(x-x0)**2
+				# def f(x, a0, A, a, phi, b):
+				# 	return a0 + np.exp(-b*x)*A*np.sin(a*x+phi)
 
-			while self.overlap[0] < ths and count < max_iter: # and g_norm > len(params)*8e-6:
-				# print("Shift optimizing step:",count+1)
-				count = count +1
+				self.overlap = self.compute_overlap(
+					state_wfn_Ht, self.parameters, self.shift, expectation, sampler)
 
-				if opt == 'momentum':
-					old_grad = np.asarray(g[:,0])
-				## Measure energy and gradient
+				nmesh = 51
 
-				if grad == 'separated_param_shift':
-					overlap_backend = Aer.get_backend('statevector_simulator')
-					overlap_instance = QuantumInstance(backend=overlap_backend, shots=1)
-					overlap_sampler = CircuitSampler(overlap_instance)
-					E   = self.compute_overlap(state_wfn_Ht,self.parameters,self.shift,expectation,overlap_sampler)
-					g   = self.compute_gradient(
+				for opt_step in range(3):
+					print("\n", "opt step: ", opt_step, "\n")
+					
+					t_mesh = np.linspace(0.1, 5, num=nmesh, endpoint=True)
+					E_mesh = []
+
+					g = self.compute_gradient(
 						state_wfn_Ht, self.parameters, self.shift, expectation, sampler)
-				if grad == 'param_shift':
-					E,g = self.compute_overlap_and_gradient(state_wfn_Ht,self.parameters,self.shift,expectation,sampler)
-				if grad == 'spsa':
-					E,g = self.compute_overlap_and_gradient_spsa(state_wfn_Ht,self.parameters,self.shift,expectation,sampler,count)
+					meas_grad = np.asarray(g[:, 0])
 
-				tot_steps = tot_steps+1
+					for t in t_mesh:
+						### 1) Construct the total circuit
+						### 2) Evaluate only overlap for that circuit (O_t) tuple of value and error
+						### 3) E_mesh.append(O_t)
+						tempshift = copy.copy(self.shift) + t*meas_grad
+						temploss = 1-self.compute_overlap(
+							state_wfn_Ht, self.parameters, tempshift, expectation, sampler)
+						E_mesh.append(temploss)
 
-				if count == 1:
-					initial_fidelities.append(self.overlap[0])
-					err_init_fid.append(self.overlap[1])
+					t_opt,E_opt = None,None
+					E_average = [E[0] for E in E_mesh]
+					E_stdev   = [E[1] for E in E_mesh]
+					print(E_average)
+					p0 = [min(E_average),1.0,t_mesh[np.argmin(E_average)]]
+					# p0 = [1.0, -1.0, t_mesh[np.argmin(E_average)], 0.0, 0.0]
+					p_opt,p_cov = curve_fit(
+						f,t_mesh,E_average,p0=p0,sigma=E_stdev,absolute_sigma=True,method='lm',maxfev=1600)
+					t_opt = [p_opt[2],np.sqrt(p_cov[2,2])]
+					# print(t_opt)
+					E_opt = [p_opt[0],np.sqrt(p_cov[0,0])]
+					# E(t) = E(x0-t*g) ~ a* x^2 + bx + c
+					# return t_mesh,E_mesh,t_opt,E_opt
 
-					# shifts_t.append(list(self.shift))
+					# plt.figure()
+					# plt.plot(t_mesh, E_average, 'o')
+					# plt.vlines(t_opt[0], ymin=0, ymax=1, color='black')
+					# plt.show()
 
-				# print('Overlap',self.overlap)
-				# print('Gradient', self.gradient[:, 0])
+					self.shift = self.shift + t_opt[0]*meas_grad
+					self.overlap = E_opt
 
-				overlap_history.append(self.overlap[0])
+			else:
+				while self.overlap[0] < ths and count < max_iter: # and g_norm > len(params)*8e-6:
+					# print("Shift optimizing step:",count+1)
+					count = count +1
 
+					if opt == 'momentum':
+						old_grad = np.asarray(g[:,0])
+					## Measure energy and gradient
+					if opt != 'nelder-mead':
+
+						if grad == 'separated_param_shift':
+							overlap_backend = Aer.get_backend('statevector_simulator')
+							overlap_instance = QuantumInstance(backend=overlap_backend, shots=1)
+							overlap_sampler = CircuitSampler(overlap_instance)
+							self.overlap = self.compute_overlap(state_wfn_Ht,self.parameters,self.shift,expectation,overlap_sampler)
+							g   = self.compute_gradient(
+								state_wfn_Ht, self.parameters, self.shift, expectation, sampler)
+						if grad == 'param_shift':
+							E,g = self.compute_overlap_and_gradient(state_wfn_Ht,self.parameters,self.shift,expectation,sampler)
+						if grad == 'spsa':
+							E,g = self.compute_overlap_and_gradient_spsa(state_wfn_Ht,self.parameters,self.shift,expectation,sampler,count)
+
+					tot_steps = tot_steps+1
+
+					if count == 1:
+						initial_fidelities.append(self.overlap[0])
+						err_init_fid.append(self.overlap[1])
+
+						# shifts_t.append(list(self.shift))
+
+					# print('Overlap',self.overlap)
+					# print('Gradient', self.gradient[:, 0])
+
+					overlap_history.append(self.overlap[0])
+
+					interm_fid_t.append(self.overlap[0])
+
+					if opt == 'nelder-mead':
+						print("\n Nelder-Mead \n")
+						def func_nm(x): return self.compute_overlap(
+							state_wfn_Ht, self.parameters, x, expectation, sampler)
+						simplex = self.nelder_mead(func_nm, simplex)
+						self.shift = np.asarray(simplex[0][0])
+						self.overlap = np.asarray(simplex[0][1])
+						print("new overlap: ", self.overlap)
+
+					if opt == 'adam':
+						print("\n Adam \n")
+						meas_grad = np.asarray(g[:,0])
+						self.shift = np.asarray(self.adam_gradient(count,m,v,meas_grad))
+
+					if opt == 'momentum':
+						print("Momentum")
+						m_grad = np.asarray(g[:,0]) + 0.9*old_grad
+						self.shift = self.shift + m_grad
+
+					elif opt== 'sgd':
+						self.shift = self.shift + g[:,0]
+
+					shifts_t.append(list(self.shift))
+
+					#Norm of the gradient
+					if opt != 'nelder-mead':
+						g_vec = np.asarray(g[:,0])
+						g_norm = np.linalg.norm(g_vec)
+
+						grad_t.append(list(self.gradient[:, 0]))
+						err_grad_t.append(list(self.gradient[:, 1]))
+						grad_norms_t.append(g_norm)
+
+					# user_messenger.publish({"grad_t": grad_t, "err_grad_t": err_grad_t, "t_step": i+1})
+
+
+			# Evaluate final overlap
+			if grad == 'separated_param_shift' and opt != 'nelder-mead' and opt != 'line search':
+				self.overlap = self.compute_overlap(
+					state_wfn_Ht, self.parameters, self.shift, expectation, overlap_sampler)
 				interm_fid_t.append(self.overlap[0])
 
-				if opt == 'adam':
-					print("\n Adam \n")
-					meas_grad = np.asarray(g[:,0])
-					self.shift = np.asarray(self.adam_gradient(count,m,v,meas_grad))
-
-				if opt == 'momentum':
-					print("Momentum")
-					m_grad = np.asarray(g[:,0]) + 0.9*old_grad
-					self.shift = self.shift + m_grad
-
-				elif opt== 'sgd':
-					self.shift = self.shift + g[:,0]
-
-				shifts_t.append(list(self.shift))
-
-				#Norm of the gradient
-				g_vec = np.asarray(g[:,0])
-				g_norm = np.linalg.norm(g_vec)
-
-				grad_t.append(list(self.gradient[:, 0]))
-				err_grad_t.append(list(self.gradient[:, 1]))
-				grad_norms_t.append(g_norm)
-
-				# user_messenger.publish({"grad_t": grad_t, "err_grad_t": err_grad_t, "t_step": i+1})
-
+			# Select best configuration
+			# best_index = np.argmax(interm_fid_t)
+			# self.shift = np.array(shifts_t[best_index])
+			# self.overlap = np.array([interm_fid_t[best_index], 0])
 
 			# Update parameters
-
-			# Select best configuration
-			best_index = np.argmax(interm_fid_t)
-			self.shift = np.array(shifts_t[best_index])
-			self.overlap = np.array([interm_fid_t[best_index], 0])
 
 
 			# print('\n---------------------------------- \n')
@@ -1197,6 +1384,8 @@ def main(backend, user_messenger, **kwargs):
 	obs     = kwargs.pop('obs', {'E': generate_ising(nqubits, V, g)})
 	max_iter= kwargs.pop('iterations', 30)
 	initial_point = kwargs.pop('initial_point', None)
+	measurement_error_mitigation = kwargs.get(
+		"measurement_error_mitigation", False)
 
 	H = []
 	for label in HamDict:
@@ -1219,9 +1408,23 @@ def main(backend, user_messenger, **kwargs):
 		ansatz = efficient_SU2
 		ex_params = np.zeros(nqubits*2 + depth*nqubits*2)
 
-	shift = np.zeros(len(ex_params))
+	if opt == 'line search':
+		np.random.seed(99)
+		shift = np.random.normal(0, 0.1, len(ex_params))
+	else:
+		shift = np.zeros(len(ex_params))
+	# shift = np.zeros(len(ex_params))
 
-	instance = QuantumInstance(backend=backend, shots=shots)
+	# set up quantum instance
+	if measurement_error_mitigation:
+		instance = QuantumInstance(
+			backend,
+			shots=shots,
+			measurement_error_mitigation_shots=shots,
+			measurement_error_mitigation_cls=CompleteMeasFitter,
+		)
+	else:
+		instance = QuantumInstance(backend, shots=shots)
 
 	algo = pVQD(H, ansatz, depth, ex_params,
 	            shift, instance, shots, H_tfunc)
@@ -1230,7 +1433,7 @@ def main(backend, user_messenger, **kwargs):
 	output = algo.run(ths, dt, n_steps, user_messenger, obs_dict=obs, max_iter=max_iter, opt=opt,
 					 grad='separated_param_shift', initial_point=initial_point)
 	end = time.time() - begin
-	output["exec_time"] = initial_point["exec_time"]+end
+	output["exec_time"] = end
 
 	return output
 
