@@ -1124,7 +1124,7 @@ class pVQD:
 
 				nmesh = 51
 
-				for opt_step in range(3):
+				for opt_step in range(6):
 					print("\n", "opt step: ", opt_step, "\n")
 					
 					t_mesh = np.linspace(0.1, 5, num=nmesh, endpoint=True)
@@ -1149,8 +1149,13 @@ class pVQD:
 					print(E_average)
 					p0 = [min(E_average),1.0,t_mesh[np.argmin(E_average)]]
 					# p0 = [1.0, -1.0, t_mesh[np.argmin(E_average)], 0.0, 0.0]
-					p_opt,p_cov = curve_fit(
-						f,t_mesh,E_average,p0=p0,sigma=E_stdev,absolute_sigma=True,method='lm',maxfev=1600)
+					try:
+						p_opt,p_cov = curve_fit(
+							f,t_mesh,E_average,p0=p0,sigma=E_stdev,absolute_sigma=True,method='lm',maxfev=1600)
+					except RuntimeError:
+						print("\n Proceeding to next time step... \n")
+						break
+
 					t_opt = [p_opt[2],np.sqrt(p_cov[2,2])]
 					# print(t_opt)
 					E_opt = [p_opt[0],np.sqrt(p_cov[0,0])]
