@@ -280,6 +280,28 @@ def hweff_ansatz_adiab(n_spins, depth, p):
 
 #==========================================
 
+def general_ansatz(n_spins, depth, p):
+
+	count = 0
+	circuit = QuantumCircuit(n_spins)
+
+	for i in range(n_spins):
+		circuit.h(i)
+
+	for j in range(depth):
+
+		for i in range(n_spins-1):
+			circuit.cnot(i, i+1)
+
+		for i in range(n_spins):
+			circuit.rz(p[count], i)
+			circuit.rx(p[count+1], i)
+			circuit.rz(p[count+2], i)
+			count += 3
+	
+	return circuit
+
+#==========================================
 
 def custom_ansatz(p):
 
@@ -1122,9 +1144,10 @@ class pVQD:
 				self.overlap = self.compute_overlap(
 					state_wfn_Ht, self.parameters, self.shift, expectation, sampler)
 
-				nmesh = 51
+				nmesh = 21 #number of points to measure
+				optsteps = 8 #number of optimization steps per time step
 
-				for opt_step in range(6):
+				for opt_step in range(optsteps):
 					print("\n", "opt step: ", opt_step, "\n")
 					
 					t_mesh = np.linspace(0.1, 5, num=nmesh, endpoint=True)
@@ -1412,6 +1435,10 @@ def main(backend, user_messenger, **kwargs):
 	elif anstz == 'su2':
 		ansatz = efficient_SU2
 		ex_params = np.zeros(nqubits*2 + depth*nqubits*2)
+
+	elif anstz == 'general':
+		ansatz = general_ansatz
+		ex_params = np.zeros(nqubits*3*depth)
 
 	if opt == 'line search':
 		np.random.seed(99)

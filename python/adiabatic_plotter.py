@@ -19,7 +19,8 @@ svVQD = json.load(open('data/VQD/T3_dt05_sv.dat'))
 # runtime = json.load(open(
 #     'data/interim_runtime/err_mitig_step19_ibmq_lima_NN1_iter20_shots8000.dat'))
 runtime = json.load(open('data/VQD/neldermead_test.dat'))
-runtime2 = json.load(open('data/VQD/linesearch_optsteps_statevector_simulator_T3_dt0.05_shots1.dat'))
+runtime2 = json.load(open(
+    'data/VQD/linesearch_optsteps_statevector_simulator_T2_dt0.05_shots1.dat'))
 # runtime3 = json.load(open('data/VQD/neldermead_qasm_T3_dt0.05_shots100000.dat'))
 times = np.array(runtime["times"])
 

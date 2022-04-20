@@ -43,6 +43,7 @@ threshold = 0.99999
 optimizer = 'line search'
 ham = ['hzz', 'hx']
 anstz = "hweff"
+depth = 1
 
 # inital_point = json.load(open(
 #     'data/interim_runtime/err_mitig_step10_ibmq_lima_NN1_iter20_shots8000.dat'))
@@ -62,7 +63,7 @@ def interim_result_callback(job_id, interim_result):
 #pvqd inputs
 inputs = {"nqubits": nqubits, "iterations": maxiter, "tmax": tmax, "dt": dt,
           "hamiltonian": ham, "NN": NN, "shots": shots, "ansatz": anstz, "initial_point": initial_point,
-          "measurement_error_mitigation": False, "optimizer": optimizer, "threshold": threshold}
+          "measurement_error_mitigation": False, "optimizer": optimizer, "threshold": threshold, "depth": depth}
 
 #vqe inputs?
 # def dumb_ansatz(n_spins, p):
