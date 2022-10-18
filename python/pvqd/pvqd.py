@@ -374,10 +374,10 @@ class PVQD(RealTimeEvolver):
 
         initial_guess = self.initial_guess
 
-        for _ in range(num_timesteps):
+        for t in range(num_timesteps):
             # perform VQE to find the next parameters
             next_parameters, fidelity = self.step(
-                hamiltonian, self.ansatz, parameters[-1], timestep, initial_guess
+                hamiltonian.assign_parameters({hamiltonian.parameters : t}), self.ansatz, parameters[-1], timestep, initial_guess
             )
 
             # set initial guess to last parameter update
