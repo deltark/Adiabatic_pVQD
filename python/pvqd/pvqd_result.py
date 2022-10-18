@@ -16,7 +16,7 @@ from __future__ import annotations
 import numpy as np
 
 from qiskit.circuit import QuantumCircuit
-from ..time_evolution_result import TimeEvolutionResult
+from qiskit.algorithms.time_evolvers.time_evolution_result import TimeEvolutionResult
 
 
 class PVQDResult(TimeEvolutionResult):
