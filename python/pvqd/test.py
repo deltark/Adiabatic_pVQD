@@ -3,6 +3,8 @@ import numpy as np
 from pvqd import PVQD
 from ansatze import hweff_ansatz_adiab
 from qiskit.circuit import ParameterVector, Parameter
+from qiskit.opflow import PauliSumOp
+from qiskit.algorithms.time_evolvers.time_evolution_problem import TimeEvolutionProblem
 
 from qiskit.algorithms.state_fidelities import ComputeUncompute
 from qiskit.primitives import Estimator, Sampler
@@ -25,10 +27,15 @@ estimator = Estimator()
 time = 1.0
 J = -1
 h = -1
+# time_param = Parameter('T')
+# coeff_list = 2*[J/time*time_param] + 3*[h]
+# hamiltonian = SparsePauliOp(["ZZI", "IZZ", "IIX", "IXI", "XII"], coeffs = np.array(coeff_list))
+# hamiltonian = PauliSumOp(J*time_param/time*["ZZI", "IZZ"]) # + h*SparsePauliOp(["IIX", "IXI", "XII"]))
+hamiltonian = PauliSumOp(SparsePauliOp(["IIX", "IXI", "XII"]), h)
 
-hamiltonian = J/time * np.multiply(Parameter('t'), SparsePauliOp(Pauli("ZZI")), Pauli("IZZ")) + h * SparsePauliOp([Pauli("IIX"), Pauli("IXI"), Pauli("XII")])
+print(hamiltonian)
 
-observable = Pauli("ZZ")
+observable = Pauli("ZZI")
 # ansatz = EfficientSU2(2, reps=1)
 
 optimizer = GradientDescent()
@@ -37,15 +44,15 @@ optimizer = GradientDescent()
 pvqd = PVQD(
     fidelity,
     ansatz,
-    estimator,
     initial_parameters,
-    num_timesteps=2,
+    estimator,
     optimizer=optimizer,
+    num_timesteps=2,
 )
 
 # specify the evolution problem
-problem = EvolutionProblem(
-    hamiltonian, time, aux_operators=[hamiltonian, observable]
+problem = TimeEvolutionProblem(
+    hamiltonian, time, aux_operators=[observable]
 )
 
 # and evolve!

@@ -32,6 +32,7 @@ from qiskit.algorithms.time_evolvers.time_evolution_result import TimeEvolutionR
 from qiskit.algorithms.time_evolvers.real_time_evolver import RealTimeEvolver
 from qiskit.algorithms.state_fidelities.base_state_fidelity import BaseStateFidelity
 from qiskit.algorithms.optimizers import Optimizer, Minimizer
+from qiskit.quantum_info import Pauli, SparsePauliOp
 
 logger = logging.getLogger(__name__)
 
@@ -263,8 +264,11 @@ class PVQD(RealTimeEvolver):
             param_dicts = self._transpose_param_dicts(value_dict)
             num_of_param_sets = len(param_dicts)
             states1 = [trotterized] * num_of_param_sets
+            # print(states1[0].parameters)
             states2 = [shifted] * num_of_param_sets
+            # print(states2[0].parameters)
             param_dicts2 = [list(param_dict.values()) for param_dict in param_dicts]
+            # print(param_dicts2)
             # the first state does not have free parameters so values_1 will be None by default
             try:
                 job = self.fidelity_primitive.run(states1, states2, values_2=param_dicts2)
@@ -345,6 +349,7 @@ class PVQD(RealTimeEvolver):
         time = evolution_problem.time
         observables = evolution_problem.aux_operators
         hamiltonian = evolution_problem.hamiltonian
+        t_param = evolution_problem.t_param
 
         # determine the number of timesteps and set the timestep
         num_timesteps = (
@@ -374,10 +379,13 @@ class PVQD(RealTimeEvolver):
 
         initial_guess = self.initial_guess
 
-        for t in range(num_timesteps):
+        for i in range(num_timesteps):
+            t = times[i]
             # perform VQE to find the next parameters
+            # print(hamiltonian.assign_parameters({t_param : t}))
+            hamiltonian = PauliSumOp(-t/time * SparsePauliOp(["ZZI", "IZZ"]) - SparsePauliOp(["IIX", "IXI", "XII"]))
             next_parameters, fidelity = self.step(
-                hamiltonian.assign_parameters({hamiltonian.parameters : t}), self.ansatz, parameters[-1], timestep, initial_guess
+                hamiltonian, self.ansatz, parameters[-1], timestep, initial_guess
             )
 
             # set initial guess to last parameter update
