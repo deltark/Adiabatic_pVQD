@@ -175,7 +175,7 @@ class PVQD(RealTimeEvolver):
         theta: np.ndarray,
         dt: float,
         initial_guess: np.ndarray,
-    ) -> tuple[np.ndarray, float]:
+    ) -> tuple[np.ndarray, float, np.ndarray] | dict[Any]:
         """Perform a single time step.
 
         Args:
@@ -199,15 +199,20 @@ class PVQD(RealTimeEvolver):
         if initial_guess is None:
             initial_guess = np.random.random(self.initial_parameters.size) * 0.01
 
-        if isinstance(self.optimizer, Optimizer):
+        if isinstance(self.optimizer, Optimizer): #not using those because there's no callback
             optimizer_result = self.optimizer.minimize(loss, initial_guess, gradient)
+        
+            # clip the fidelity to [0, 1]
+            fidelity = np.clip(1 - optimizer_result.fun, 0, 1)
+
+            return theta + optimizer_result.x, fidelity, optimizer_result.jac
+
         else:
             optimizer_result = self.optimizer(loss, initial_guess, gradient)
 
-        # clip the fidelity to [0, 1]
-        fidelity = np.clip(1 - optimizer_result.fun, 0, 1)
+            return optimizer_result #dictionary
 
-        return theta + optimizer_result.x, fidelity
+
 
     def get_loss(
         self,
@@ -348,7 +353,7 @@ class PVQD(RealTimeEvolver):
 
         time = evolution_problem.time
         observables = evolution_problem.aux_operators
-        hamiltonian = evolution_problem.hamiltonian
+        # hamiltonian = evolution_problem.hamiltonian
         t_param = evolution_problem.t_param
 
         # determine the number of timesteps and set the timestep
@@ -375,7 +380,14 @@ class PVQD(RealTimeEvolver):
 
         fidelities = [1]
         parameters = [self.initial_parameters]
+        gradients = [np.zeros(len(self.initial_parameters))]
+        iterations = []
         times = np.linspace(0, time, num_timesteps + 1).tolist()  # +1 to include initial time 0
+
+        #save info in each opt loop
+        total_fidelities = []
+        total_parameters = []
+        total_gradients = []
 
         initial_guess = self.initial_guess
 
@@ -383,17 +395,36 @@ class PVQD(RealTimeEvolver):
             t = times[i]
             # perform VQE to find the next parameters
             # print(hamiltonian.assign_parameters({t_param : t}))
-            hamiltonian = PauliSumOp(-t/time * SparsePauliOp(["ZZI", "IZZ"]) - SparsePauliOp(["IIX", "IXI", "XII"]))
-            next_parameters, fidelity = self.step(
+
+            # time-evolve the hamiltonian
+            evolution_problem.hamiltonian = hamiltonian = evolution_problem.aux_operators[0] = observables[0] = PauliSumOp(-t/time * SparsePauliOp(["ZZI", "IZZ"]) - SparsePauliOp(["IIX", "IXI", "XII"]))
+            
+            # With Qiskit optimizer:
+            # next_parameters, fidelity, gradient = self.step(
+            #     hamiltonian, self.ansatz, parameters[-1], timestep, initial_guess
+            # )
+
+            # With custom optimizer (returns dict):
+            res = self.step(
                 hamiltonian, self.ansatz, parameters[-1], timestep, initial_guess
             )
+            next_parameters = res["parameters"][-1]
+            fidelity = res["fidelities"][-1]
+            gradient = res["gradients"][-1]
 
             # set initial guess to last parameter update
             initial_guess = next_parameters - parameters[-1]
 
+            total_parameters.append(res["parameters"])
+            total_fidelities.append(res["fidelities"])
+            total_gradients.append(res["gradients"])
+
             parameters.append(next_parameters)
             fidelities.append(fidelity)
+            gradients.append(gradient)
+            iterations.append(res["iter"])
             if observables is not None:
+                print(observables)
                 observable_values.append(evaluate_observables(next_parameters))
 
         evolved_state = self.ansatz.bind_parameters(parameters[-1])
@@ -404,6 +435,11 @@ class PVQD(RealTimeEvolver):
             parameters=parameters,
             fidelities=fidelities,
             estimated_error=1 - np.prod(fidelities),
+            gradients=gradients,
+            iterations=iterations,
+            total_parameters=total_parameters,
+            total_fidelities=total_fidelities,
+            total_gradients=total_gradients
         )
         if observables is not None:
             result.observables = observable_values

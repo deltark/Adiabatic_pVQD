@@ -33,12 +33,44 @@ h = -1
 # hamiltonian = PauliSumOp(J*time_param/time*["ZZI", "IZZ"]) # + h*SparsePauliOp(["IIX", "IXI", "XII"]))
 hamiltonian = PauliSumOp(SparsePauliOp(["IIX", "IXI", "XII"]), h)
 
-print(hamiltonian)
+# print(hamiltonian)
 
 observable = Pauli("ZZI")
 # ansatz = EfficientSU2(2, reps=1)
 
-optimizer = GradientDescent()
+# optimizer = GradientDescent()
+
+def grad_descent(loss_callable, initial_guess, gradient_callable, learn_rate=1.0, max_iter=100, threshold=1e-6):
+
+    count = 0
+    res_dict = {}
+
+    loss = loss_callable(initial_guess)
+    grad = gradient_callable(initial_guess)
+    old_params = initial_guess
+
+    losses = [loss]
+    gradients = [grad]
+    params = [old_params]
+
+    while count<max_iter and loss>threshold:
+        count += 1
+        new_params = old_params - learn_rate*grad
+        loss = loss_callable(new_params)
+        grad = gradient_callable(new_params)
+
+        losses.append(loss)
+        gradients.append(grad)
+        params.append(new_params)
+
+        old_params = new_params
+
+    res_dict["iter"] = count
+    res_dict["fidelities"] = np.clip(1-np.array(losses), 0, 1)
+    res_dict["gradients"] = gradients
+    res_dict["parameters"] = params
+
+    return res_dict
 
 # setup the algorithm
 pvqd = PVQD(
@@ -46,13 +78,13 @@ pvqd = PVQD(
     ansatz,
     initial_parameters,
     estimator,
-    optimizer=optimizer,
+    optimizer=grad_descent,
     num_timesteps=2,
 )
 
 # specify the evolution problem
 problem = TimeEvolutionProblem(
-    hamiltonian, time, aux_operators=[observable]
+    hamiltonian, time, aux_operators=[hamiltonian]
 )
 
 # and evolve!

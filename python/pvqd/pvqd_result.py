@@ -31,6 +31,11 @@ class PVQDResult(TimeEvolutionResult):
         fidelities: list[float] | None = None,
         estimated_error: float | None = None,
         observables: list[list[float]] | None = None,
+        gradients: list[np.ndarray] | None = None,
+        iterations: list[int] | None = None,
+        total_parameters: list[list[np.ndarray]] | None = None,
+        total_fidelities: list[list[float]] | None = None,
+        total_gradients: list[list[np.ndarray]] | None = None
     ):
         """
         Args:
@@ -51,3 +56,8 @@ class PVQDResult(TimeEvolutionResult):
         self.fidelities = fidelities
         self.estimated_error = estimated_error
         self.observables = observables
+        self.gradients = gradients
+        self.iterations = iterations
+        self.total_parameters = total_parameters
+        self.total_fidelities = total_fidelities
+        self.total_gradients = total_gradients
